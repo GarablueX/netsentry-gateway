@@ -7,15 +7,27 @@ passwords.txt
 secrets/
 credentials/
 
-# Logs
+# Runtime logs and alerts
 *.log
 logs/
 snort/alerts/
+*.alert
+*.jsonl
 
 # Packet captures
 *.pcap
 *.pcapng
 captures/
+
+# Build artifacts
+snort/build/
+*.o
+*.so
+*.a
+CMakeFiles/
+CMakeCache.txt
+Makefile
+cmake_install.cmake
 
 # Python
 __pycache__/
@@ -27,3 +39,4 @@ venv/
 .DS_Store
 Thumbs.db
 *.swp
+*~
