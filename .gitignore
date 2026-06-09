@@ -1,0 +1,29 @@
+# Secrets
+.env
+*.key
+*.pem
+*.token
+passwords.txt
+secrets/
+credentials/
+
+# Logs
+*.log
+logs/
+snort/alerts/
+
+# Packet captures
+*.pcap
+*.pcapng
+captures/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# OS/editor
+.DS_Store
+Thumbs.db
+*.swp
