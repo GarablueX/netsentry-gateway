@@ -18,6 +18,12 @@ SID_NAMES = {
     "10000004": "AdGuard UI Attempt",
     "10000005": "DNS Query",
     "10000006": "Dashboard Access Attempt",
+    "10000009": "HTTP Test Service Access",
+    "10000010": "HTTP /admin Probe",
+    "10000011": "HTTP /login Probe",
+    "10000012": "HTTP /.env Probe",
+    "10000013": "HTTP /wp-login.php Probe",
+    "10000014": "HTTP /phpmyadmin Probe",
 }
 
 

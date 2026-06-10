@@ -54,4 +54,71 @@ rev:6;
 )
 
 
+alert tcp !192.168.1.11 any -> 192.168.1.17 8081 (
+
+msg:" Non admin http test service acess detected "; 
+flags:S;
+sid:10000009;
+rev:1;
+
+)
+ 
+alert http any any -> 192.168.1.17 8081 (
+
+msg:"  NETSENTRY SUSPECIOUS http path/admin detected";
+http_uri;
+content:"/admin";
+sid:10000010;
+rev:1;
+
+)
+
+
+alert http any any -> 192.168.1.17 8081 (
+
+msg:"  NETSENTRY SUSPECIOUS http path/login detected";
+http_uri;
+content:"/login";
+sid:10000011;
+rev:1;
+
+)
+
+
+
+alert http any any -> 192.168.1.17 8081 (
+
+msg:"  NETSENTRY SUSPECIOUS http path/.env detected";
+http_uri;
+content:"/.env";
+sid:10000012;
+rev:1;
+
+)
+
+
+
+
+alert http any any -> 192.168.1.17 8081 (
+
+msg:"  NETSENTRY SUSPECIOUS http path/wep login  detected";
+http_uri;
+content:"/wp-login.php";
+sid:10000013;
+rev:1;
+
+)
+
+
+
+alert http any any -> 192.168.1.17 8081 (
+
+msg:"  NETSENTRY SUSPECIOUS http path/phpadmin detected";
+http_uri;
+content:"/phpmyadmin";
+sid:10000014;
+rev:1;
+)
+
+
 
