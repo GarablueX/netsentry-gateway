@@ -1,6 +1,6 @@
 alert icmp !192.168.1.11 any -> 192.168.1.19 any (
 
-msg:"Netsentry ICMP ping detected";
+msg:" Netsentry ICMP ping detected ";
 sid:10000001;
 rev:1;
 
@@ -9,7 +9,7 @@ rev:1;
 
 alert tcp !192.168.1.11  any -> 192.168.1.19  22 (
 
-msg:" SSH SCAN/Brute-force potentional detected  ";
+msg:" NETSENTRY SSH SYN probe from non-admin detected ";
 flags:S;
 detection_filter:track by_src , count 10 ,seconds 60;
 sid:10000003;
@@ -20,7 +20,7 @@ rev:2;
 
 alert tcp !192.168.1.11  any -> 192.168.1.19  22 (
 
-msg:" SSH  Connection attempt From no Admin detected  ";
+msg:" NETSENTRY possible SSH brute-force from non-admin detected ";
 flags:S;
 sid:10000002;
 rev:2;
@@ -29,7 +29,7 @@ rev:2;
 
 alert tcp !192.168.1.11  any -> 192.168.1.19  3001 (
 
-msg:"AD-Guard UI access attempt ";
+msg:" NETSENTRY AdGuard UI access attempt from non-admin detected ";
 flags:S;
 sid:10000004;
 rev:3;
@@ -48,7 +48,7 @@ rev:1;
 
 alert tcp !192.168.1.11  any -> 192.168.1.19  5050 (
 
-msg:"HTTP-Dashboard aacess from non admin detected ";
+msg:" NETSENTRY IDS dashboard access attempt from non-admin detected ";
 sid:10000006;
 rev:6;
 )
@@ -57,7 +57,7 @@ rev:6;
 
 alert tcp !192.168.1.11  any -> 192.168.1.19  5051 (
 
-msg:"HTTP-status aacess from non admin detected ";
+msg:" NETSENTRY HTTP status  access attempt from non-admin detected ";
 sid:10000008;
 rev:6;
 )
@@ -65,7 +65,7 @@ rev:6;
 
 alert tcp !192.168.1.11 any -> 192.168.1.19 8081 (
 
-msg:" Non admin http test service acess detected "; 
+msg:" NETSENTRY HTTP test service access attempt from non-admin detected "; 
 flags:S;
 sid:10000009;
 rev:1;
@@ -122,7 +122,7 @@ rev:1;
 
 alert http any any -> 192.168.1.19 8081 (
 
-msg:"  NETSENTRY SUSPECIOUS http path/phpadmin detected";
+msg:" NETSENTRY SUSPECIOUS http path/phpadmin detected";
 http_uri;
 content:"/phpmyadmin";
 sid:10000014;
@@ -133,7 +133,7 @@ rev:1;
 
 alert tcp !192.168.1.11 any -> 192.168.1.19 8082 (
 
-msg:"netsentry honeypot-lite acess attempt from non admin ";
+msg:" NETSENTRY honeypot-lite access attempt from non-admin detected ";
 flags:S;
 sid:10000015;
 rev:1;
