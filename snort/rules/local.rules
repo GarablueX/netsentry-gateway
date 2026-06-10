@@ -11,7 +11,6 @@ alert tcp !192.168.1.11  any -> 192.168.1.19  22 (
 
 msg:" NETSENTRY SSH SYN probe from non-admin detected ";
 flags:S;
-detection_filter:track by_src , count 10 ,seconds 60;
 sid:10000003;
 rev:2;
 
@@ -22,6 +21,7 @@ alert tcp !192.168.1.11  any -> 192.168.1.19  22 (
 
 msg:" NETSENTRY possible SSH brute-force from non-admin detected ";
 flags:S;
+detection_filter:track by_src , count 10 ,seconds 60;
 sid:10000002;
 rev:2;
 
