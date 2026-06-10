@@ -13,12 +13,30 @@ JSONL_FILE = BASE_DIR / "snort" / "alerts" / "alerts.jsonl"
 
 
 def parse_alert(line: str) -> dict:
+    """
+    Parse one Snort alert_fast line.
+
+    Supported examples:
+
+    ICMP:
+    06/09-18:40:00.123456 [**] [1:10000001:2] "Netsentry ICMP ping detected" [**] [Priority: 0] {ICMP} 192.168.1.50 -> 192.168.1.17
+
+    TCP with ports:
+    06/09-18:40:00.123456 [**] [1:10000002:2] "SSH Connection attempt From no Admin detected" [**] [Priority: 0] {TCP} 192.168.1.50:47072 -> 192.168.1.17:22
+    """
+
     sid_match = re.search(r"\[1:(\d+):(\d+)\]", line)
     proto_match = re.search(r"\{([A-Z]+)\}", line)
-    ip_match = re.search(r"(\d+\.\d+\.\d+\.\d+)\s+->\s+(\d+\.\d+\.\d+\.\d+)", line)
     priority_match = re.search(r"\[Priority:\s*(\d+)\]", line)
-
     timestamp_match = re.match(r"^(\d{2}/\d{2}-\d{2}:\d{2}:\d{2}\.\d+)", line)
+
+    # Supports:
+    # 192.168.1.50 -> 192.168.1.17
+    # 192.168.1.50:47072 -> 192.168.1.17:22
+    flow_match = re.search(
+        r"(\d{1,3}(?:\.\d{1,3}){3})(?::(\d+))?\s+->\s+(\d{1,3}(?:\.\d{1,3}){3})(?::(\d+))?",
+        line,
+    )
 
     message = "Unknown alert"
     if "[**]" in line:
@@ -26,6 +44,7 @@ def parse_alert(line: str) -> dict:
         if len(parts) >= 3:
             message = parts[1].strip()
             message = re.sub(r"\[1:\d+:\d+\]\s*", "", message).strip()
+            message = message.strip('"').strip()
 
     return {
         "received_at": datetime.now().isoformat(timespec="seconds"),
@@ -34,23 +53,34 @@ def parse_alert(line: str) -> dict:
         "rev": sid_match.group(2) if sid_match else "unknown",
         "priority": priority_match.group(1) if priority_match else "unknown",
         "proto": proto_match.group(1) if proto_match else "unknown",
-        "src": ip_match.group(1) if ip_match else "unknown",
-        "dst": ip_match.group(2) if ip_match else "unknown",
+        "src": flow_match.group(1) if flow_match else "unknown",
+        "src_port": flow_match.group(2) if flow_match and flow_match.group(2) else "",
+        "dst": flow_match.group(3) if flow_match else "unknown",
+        "dst_port": flow_match.group(4) if flow_match and flow_match.group(4) else "",
         "message": message,
         "raw": line.strip(),
     }
 
 
+def format_endpoint(ip: str, port: str) -> str:
+    if port:
+        return f"{ip}:{port}"
+    return ip
+
+
 def print_alert(alert: dict) -> None:
-    print("=" * 70, flush=True)
+    src_endpoint = format_endpoint(alert["src"], alert["src_port"])
+    dst_endpoint = format_endpoint(alert["dst"], alert["dst_port"])
+
+    print("=" * 80, flush=True)
     print(f"ALERT:    {alert['message']}", flush=True)
     print(f"SID:      {alert['sid']}  REV: {alert['rev']}", flush=True)
     print(f"PRIORITY: {alert['priority']}", flush=True)
     print(f"PROTO:    {alert['proto']}", flush=True)
-    print(f"SRC:      {alert['src']}", flush=True)
-    print(f"DST:      {alert['dst']}", flush=True)
+    print(f"SRC:      {src_endpoint}", flush=True)
+    print(f"DST:      {dst_endpoint}", flush=True)
     print(f"TIME:     {alert['received_at']}", flush=True)
-    print("=" * 70, flush=True)
+    print("=" * 80, flush=True)
 
 
 def write_jsonl(alert: dict) -> None:
@@ -93,7 +123,9 @@ def follow_file(path: Path, from_start: bool = False) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Watch Snort alert_fast output and write JSONL alerts.")
+    parser = argparse.ArgumentParser(
+        description="Watch Snort alert_fast output and write structured JSONL alerts."
+    )
     parser.add_argument(
         "--from-start",
         action="store_true",
