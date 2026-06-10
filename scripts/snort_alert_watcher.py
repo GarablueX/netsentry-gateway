@@ -19,10 +19,10 @@ def parse_alert(line: str) -> dict:
     Supported examples:
 
     ICMP:
-    06/09-18:40:00.123456 [**] [1:10000001:2] "Netsentry ICMP ping detected" [**] [Priority: 0] {ICMP} 192.168.1.50 -> 192.168.1.17
+    06/09-18:40:00.123456 [**] [1:10000001:2] "Netsentry ICMP ping detected" [**] [Priority: 0] {ICMP} 192.168.1.50 -> 192.168.1.19
 
     TCP with ports:
-    06/09-18:40:00.123456 [**] [1:10000002:2] "SSH Connection attempt From no Admin detected" [**] [Priority: 0] {TCP} 192.168.1.50:47072 -> 192.168.1.17:22
+    06/09-18:40:00.123456 [**] [1:10000002:2] "SSH Connection attempt From no Admin detected" [**] [Priority: 0] {TCP} 192.168.1.50:47072 -> 192.168.1.19:22
     """
 
     sid_match = re.search(r"\[1:(\d+):(\d+)\]", line)
@@ -31,8 +31,8 @@ def parse_alert(line: str) -> dict:
     timestamp_match = re.match(r"^(\d{2}/\d{2}-\d{2}:\d{2}:\d{2}\.\d+)", line)
 
     # Supports:
-    # 192.168.1.50 -> 192.168.1.17
-    # 192.168.1.50:47072 -> 192.168.1.17:22
+    # 192.168.1.50 -> 192.168.1.19
+    # 192.168.1.50:47072 -> 192.168.1.19:22
     flow_match = re.search(
         r"(\d{1,3}(?:\.\d{1,3}){3})(?::(\d+))?\s+->\s+(\d{1,3}(?:\.\d{1,3}){3})(?::(\d+))?",
         line,

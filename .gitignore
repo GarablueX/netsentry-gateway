@@ -13,7 +13,6 @@ logs/
 snort/alerts/
 *.alert
 *.jsonl
-
 # Packet captures
 *.pcap
 *.pcapng
@@ -40,3 +39,6 @@ venv/
 Thumbs.db
 *.swp
 *~
+
+# Backup files
+*.bak

@@ -7,6 +7,7 @@ from flask import Flask, jsonify, render_template_string, request, redirect, url
 BASE_DIR = Path.home() / "netsentry-gateway"
 ALERTS_JSONL = BASE_DIR / "snort" / "alerts" / "alerts.jsonl"
 ALERT_FAST = BASE_DIR / "snort" / "alerts" / "alert_fast.txt"
+HONEYPOT_LOG = BASE_DIR / "logs" / "honeypot_lite_attempts.jsonl"
 
 app = Flask(__name__)
 
@@ -18,12 +19,14 @@ SID_NAMES = {
     "10000004": "AdGuard UI Attempt",
     "10000005": "DNS Query",
     "10000006": "Dashboard Access Attempt",
+    "10000008": "Status API Access Attempt",
     "10000009": "HTTP Test Service Access",
     "10000010": "HTTP /admin Probe",
     "10000011": "HTTP /login Probe",
     "10000012": "HTTP /.env Probe",
     "10000013": "HTTP /wp-login.php Probe",
     "10000014": "HTTP /phpmyadmin Probe",
+    "10000015": "Honeypot-lite Access Attempt",
 }
 
 
@@ -187,6 +190,7 @@ HTML_TEMPLATE = """
             border-collapse: collapse;
             background: #17171f;
             border: 1px solid #333342;
+            margin-bottom: 25px;
         }
 
         th, td {
@@ -246,6 +250,7 @@ HTML_TEMPLATE = """
             background: #1b1b23;
             border-radius: 8px;
             border: 1px solid #333342;
+            margin-bottom: 25px;
         }
 
         .raw {
@@ -259,6 +264,23 @@ HTML_TEMPLATE = """
             margin-top: 25px;
             margin-bottom: 10px;
             color: #eeeeee;
+        }
+
+        .password {
+            color: #ff7777;
+            font-family: monospace;
+        }
+
+        .username {
+            color: #8dd7ff;
+            font-family: monospace;
+        }
+
+        .ua {
+            color: #999999;
+            font-size: 12px;
+            max-width: 380px;
+            word-break: break-word;
         }
 
         @media (max-width: 900px) {
@@ -277,7 +299,7 @@ HTML_TEMPLATE = """
         <div>
             <h1>NetSentry V0 IDS Dashboard</h1>
             <div class="subtitle">
-                Host-facing Snort IDS alerts from <code>alerts.jsonl</code>. Auto-refreshes every 10 seconds.
+                Snort IDS alerts + honeypot-lite attempts. Auto-refreshes every 10 seconds.
             </div>
         </div>
         <div>
@@ -287,21 +309,26 @@ HTML_TEMPLATE = """
     </div>
 
     <div class="actions">
-        <form method="post" action="/reset" onsubmit="return confirm('Clear all dashboard alerts? This will empty alert_fast.txt and alerts.jsonl.');">
-            <button class="danger" type="submit">Reset Dashboard Alerts</button>
+        <form method="post" action="/reset" onsubmit="return confirm('Clear dashboard alerts and honeypot attempts?');">
+            <button class="danger" type="submit">Reset Dashboard Data</button>
         </form>
         <a class="button" href="/">Refresh / Clear Filters</a>
-        <a class="button" href="/api/alerts">API JSON</a>
+        <a class="button" href="/api/alerts">Alerts API</a>
+        <a class="button" href="/api/honeypot">Honeypot API</a>
     </div>
 
     <div class="stats">
         <div class="card">
-            <div class="stat-label">Total Alerts Loaded</div>
+            <div class="stat-label">Total IDS Alerts Loaded</div>
             <div class="stat-number">{{ total_all }}</div>
         </div>
         <div class="card">
-            <div class="stat-label">Matching Filters</div>
+            <div class="stat-label">Matching IDS Filters</div>
             <div class="stat-number">{{ total_filtered }}</div>
+        </div>
+        <div class="card">
+            <div class="stat-label">Honeypot Attempts</div>
+            <div class="stat-number">{{ honeypot_total }}</div>
         </div>
         <div class="card">
             <div class="stat-label">Latest Source</div>
@@ -328,6 +355,38 @@ HTML_TEMPLATE = """
         {% endfor %}
     </div>
 
+    <h2 class="section-title">Honeypot Attempts</h2>
+    {% if honeypot_attempts %}
+    <table>
+        <thead>
+            <tr>
+                <th>Time</th>
+                <th>Source IP</th>
+                <th>Method</th>
+                <th>Path</th>
+                <th>Username</th>
+                <th>Password Tried</th>
+                <th>User-Agent</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for attempt in honeypot_attempts %}
+            <tr>
+                <td>{{ attempt.get("time", "unknown") }}</td>
+                <td class="ip">{{ attempt.get("remote_addr", "unknown") }}</td>
+                <td>{{ attempt.get("method", "unknown") }}</td>
+                <td><code>{{ attempt.get("path", "unknown") }}</code></td>
+                <td class="username">{{ attempt.get("username", "") }}</td>
+                <td class="password">{{ attempt.get("password", "") }}</td>
+                <td class="ua">{{ attempt.get("user_agent", "") }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+        <div class="empty">No honeypot attempts logged yet.</div>
+    {% endif %}
+
     <div class="filters">
         <form method="get" action="/">
             <div>
@@ -337,12 +396,12 @@ HTML_TEMPLATE = """
 
             <div>
                 <label>Destination IP</label>
-                <input name="dst" value="{{ filters.get('dst', '') }}" placeholder="192.168.1.17">
+                <input name="dst" value="{{ filters.get('dst', '') }}" placeholder="192.168.1.19">
             </div>
 
             <div>
                 <label>Destination Port</label>
-                <input name="dst_port" value="{{ filters.get('dst_port', '') }}" placeholder="22 / 3001 / 5050">
+                <input name="dst_port" value="{{ filters.get('dst_port', '') }}" placeholder="22 / 3001 / 5050 / 8082">
             </div>
 
             <div>
@@ -357,7 +416,7 @@ HTML_TEMPLATE = """
 
             <div>
                 <label>SID</label>
-                <input name="sid" value="{{ filters.get('sid', '') }}" placeholder="10000002">
+                <input name="sid" value="{{ filters.get('sid', '') }}" placeholder="10000015">
             </div>
 
             <div>
@@ -367,7 +426,7 @@ HTML_TEMPLATE = """
 
             <div>
                 <label>Message contains</label>
-                <input name="q" value="{{ filters.get('q', '') }}" placeholder="SSH / Dashboard / ICMP">
+                <input name="q" value="{{ filters.get('q', '') }}" placeholder="SSH / Dashboard / Honeypot">
             </div>
 
             <div>
@@ -377,6 +436,7 @@ HTML_TEMPLATE = """
         </form>
     </div>
 
+    <h2 class="section-title">IDS Alerts</h2>
     {% if alerts %}
     <table>
         <thead>
@@ -417,31 +477,39 @@ HTML_TEMPLATE = """
         </tbody>
     </table>
     {% else %}
-        <div class="empty">No alerts match the current filters, or the dashboard was reset.</div>
+        <div class="empty">No IDS alerts match the current filters.</div>
     {% endif %}
 </body>
 </html>
 """
 
 
-def read_alerts(limit: int = 500) -> list[dict]:
-    if not ALERTS_JSONL.exists():
+def read_jsonl(path: Path, limit: int = 500) -> list[dict]:
+    if not path.exists():
         return []
 
-    alerts = []
+    entries = []
 
-    with ALERTS_JSONL.open("r", encoding="utf-8", errors="ignore") as f:
+    with path.open("r", encoding="utf-8", errors="ignore") as f:
         for line in f:
             line = line.strip()
             if not line:
                 continue
 
             try:
-                alerts.append(json.loads(line))
+                entries.append(json.loads(line))
             except json.JSONDecodeError:
                 continue
 
-    return alerts[-limit:][::-1]
+    return entries[-limit:][::-1]
+
+
+def read_alerts(limit: int = 500) -> list[dict]:
+    return read_jsonl(ALERTS_JSONL, limit=limit)
+
+
+def read_honeypot_attempts(limit: int = 50) -> list[dict]:
+    return read_jsonl(HONEYPOT_LOG, limit=limit)
 
 
 def contains_filter(value: str, needle: str) -> bool:
@@ -512,16 +580,20 @@ def build_summary(alerts: list[dict]) -> list[tuple[str, str, int]]:
     ]
 
 
-def reset_alert_files() -> None:
+def reset_files() -> None:
     ALERTS_JSONL.parent.mkdir(parents=True, exist_ok=True)
+    HONEYPOT_LOG.parent.mkdir(parents=True, exist_ok=True)
 
     ALERT_FAST.write_text("", encoding="utf-8")
     ALERTS_JSONL.write_text("", encoding="utf-8")
+    HONEYPOT_LOG.write_text("", encoding="utf-8")
 
 
 @app.route("/")
 def dashboard():
     all_alerts = read_alerts(limit=500)
+    honeypot_attempts = read_honeypot_attempts(limit=50)
+
     filters = get_filters()
     filtered_alerts = apply_filters(all_alerts, filters)
 
@@ -546,12 +618,14 @@ def dashboard():
         filters=filters,
         proto_values=proto_values,
         summary_cards=summary_cards,
+        honeypot_attempts=honeypot_attempts,
+        honeypot_total=len(honeypot_attempts),
     )
 
 
 @app.route("/reset", methods=["POST"])
 def reset_dashboard():
-    reset_alert_files()
+    reset_files()
     return redirect(url_for("dashboard"))
 
 
@@ -560,6 +634,11 @@ def api_alerts():
     all_alerts = read_alerts(limit=500)
     filters = get_filters()
     return jsonify(apply_filters(all_alerts, filters))
+
+
+@app.route("/api/honeypot")
+def api_honeypot():
+    return jsonify(read_honeypot_attempts(limit=100))
 
 
 if __name__ == "__main__":

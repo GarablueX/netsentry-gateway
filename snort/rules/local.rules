@@ -1,4 +1,4 @@
-alert icmp !192.168.1.11 any -> 192.168.1.17 any (
+alert icmp !192.168.1.11 any -> 192.168.1.19 any (
 
 msg:"Netsentry ICMP ping detected";
 sid:10000001;
@@ -7,7 +7,7 @@ rev:1;
 )
 
 
-alert tcp !192.168.1.11  any -> 192.168.1.17  22 (
+alert tcp !192.168.1.11  any -> 192.168.1.19  22 (
 
 msg:" SSH SCAN/Brute-force potentional detected  ";
 flags:S;
@@ -18,7 +18,7 @@ rev:2;
 )
 
 
-alert tcp !192.168.1.11  any -> 192.168.1.17  22 (
+alert tcp !192.168.1.11  any -> 192.168.1.19  22 (
 
 msg:" SSH  Connection attempt From no Admin detected  ";
 flags:S;
@@ -27,7 +27,7 @@ rev:2;
 
 ) 
 
-alert tcp !192.168.1.11  any -> 192.168.1.17  3001 (
+alert tcp !192.168.1.11  any -> 192.168.1.19  3001 (
 
 msg:"AD-Guard UI access attempt ";
 flags:S;
@@ -37,7 +37,7 @@ rev:3;
 )
 
 
-alert udp !192.168.1.11  any -> 192.168.1.17  53 (
+alert udp !192.168.1.11  any -> 192.168.1.19  53 (
 
 msg:"AD-Guard DNS query  ";
 sid:10000005;
@@ -46,7 +46,7 @@ rev:1;
 
 
 
-alert tcp !192.168.1.11  any -> 192.168.1.17  5050 (
+alert tcp !192.168.1.11  any -> 192.168.1.19  5050 (
 
 msg:"HTTP-Dashboard aacess from non admin detected ";
 sid:10000006;
@@ -54,7 +54,16 @@ rev:6;
 )
 
 
-alert tcp !192.168.1.11 any -> 192.168.1.17 8081 (
+
+alert tcp !192.168.1.11  any -> 192.168.1.19  5051 (
+
+msg:"HTTP-status aacess from non admin detected ";
+sid:10000008;
+rev:6;
+)
+
+
+alert tcp !192.168.1.11 any -> 192.168.1.19 8081 (
 
 msg:" Non admin http test service acess detected "; 
 flags:S;
@@ -63,7 +72,7 @@ rev:1;
 
 )
  
-alert http any any -> 192.168.1.17 8081 (
+alert http any any -> 192.168.1.19 8081 (
 
 msg:"  NETSENTRY SUSPECIOUS http path/admin detected";
 http_uri;
@@ -74,7 +83,7 @@ rev:1;
 )
 
 
-alert http any any -> 192.168.1.17 8081 (
+alert http any any -> 192.168.1.19 8081 (
 
 msg:"  NETSENTRY SUSPECIOUS http path/login detected";
 http_uri;
@@ -86,7 +95,7 @@ rev:1;
 
 
 
-alert http any any -> 192.168.1.17 8081 (
+alert http any any -> 192.168.1.19 8081 (
 
 msg:"  NETSENTRY SUSPECIOUS http path/.env detected";
 http_uri;
@@ -99,7 +108,7 @@ rev:1;
 
 
 
-alert http any any -> 192.168.1.17 8081 (
+alert http any any -> 192.168.1.19 8081 (
 
 msg:"  NETSENTRY SUSPECIOUS http path/wep login  detected";
 http_uri;
@@ -111,13 +120,24 @@ rev:1;
 
 
 
-alert http any any -> 192.168.1.17 8081 (
+alert http any any -> 192.168.1.19 8081 (
 
 msg:"  NETSENTRY SUSPECIOUS http path/phpadmin detected";
 http_uri;
 content:"/phpmyadmin";
 sid:10000014;
 rev:1;
+)
+
+
+
+alert tcp !192.168.1.11 any -> 192.168.1.19 8082 (
+
+msg:"netsentry honeypot-lite acess attempt from non admin ";
+flags:S;
+sid:10000015;
+rev:1;
+
 )
 
 

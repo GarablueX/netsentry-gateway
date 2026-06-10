@@ -127,7 +127,7 @@ HTML_TEMPLATE = """
 
     <div>
         <a class="button" href="/api/status">API JSON</a>
-        <a class="button" href="http://192.168.1.17:5050">IDS Dashboard</a>
+        <a class="button" href="http://192.168.1.19:5050">IDS Dashboard</a>
     </div>
 
     <div class="grid">
