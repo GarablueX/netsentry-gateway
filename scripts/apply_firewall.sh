@@ -33,6 +33,9 @@ echo "[+] SSH/SFTP admin only..."
 sudo iptables -A INPUT -p tcp -s "$ADMIN_IP" --dport 22 -j ACCEPT
 sudo iptables -A INPUT -p tcp --dport 22 -j DROP
 
+echo "[+] PORTAL FOR ALL ..."
+sudo iptables -A INPUT -p tcp -s "$LAN_NET" --dport 5500 -j ACCEPT
+
 echo "[+] AdGuard UI admin only..."
 sudo iptables -A INPUT -p tcp -s "$ADMIN_IP" --dport 3001 -j ACCEPT
 sudo iptables -A INPUT -p tcp --dport 3001 -j DROP

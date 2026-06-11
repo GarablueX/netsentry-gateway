@@ -3,52 +3,64 @@
 from pathlib import Path
 import subprocess
 import sys
-import os
 import time
+import os
 
 BASE_DIR = Path.home() / "netsentry-gateway"
 SCRIPTS_DIR = BASE_DIR / "scripts"
-LOG_DIR = BASE_DIR / "logs" / "runtime"
-PID_DIR = BASE_DIR / "logs" / "pids"
+LOG_DIR = BASE_DIR / "logs"
+PID_DIR = LOG_DIR / "pids"
+
+LOG_DIR.mkdir(parents=True, exist_ok=True)
+PID_DIR.mkdir(parents=True, exist_ok=True)
 
 SERVICES = [
     {
-        "name": "http_test_service",
-        "script": "http_test_service.py",
-        "port": 8081,
-    },
-    {
-        "name": "honeypot_lite",
-        "script": "honeypot_lite.py",
-        "port": 8082,
-    },
-    {
-        "name": "netsentry_dashboard",
+        "name": "IDS Dashboard",
         "script": "netsentry_dashboard.py",
-        "port": 5050,
+        "log": "dashboard_runtime.log",
+        "pid": "dashboard.pid",
+        "port": "5050",
     },
     {
-        "name": "netsentry_status_api",
+        "name": "Status API",
         "script": "netsentry_status_api.py",
-        "port": 5051,
+        "log": "status_api_runtime.log",
+        "pid": "status_api.pid",
+        "port": "5051",
     },
     {
-        "name": "snort_alert_watcher",
+        "name": "HTTP Test Service",
+        "script": "http_test_service.py",
+        "log": "http_test_service_runtime.log",
+        "pid": "http_test_service.pid",
+        "port": "8081",
+    },
+    {
+        "name": "Honeypot-lite",
+        "script": "honeypot_lite.py",
+        "log": "honeypot_lite_runtime.log",
+        "pid": "honeypot_lite.pid",
+        "port": "8082",
+    },
+    {
+        "name": "Snort Alert Watcher",
         "script": "snort_alert_watcher.py",
+        "log": "snort_alert_watcher_runtime.log",
+        "pid": "snort_alert_watcher.pid",
         "port": None,
+    },
+    {
+        "name": "NetSentry Portal",
+        "script": "netsentry_portal.py",
+        "log": "portal_runtime.log",
+        "pid": "portal.pid",
+        "port": "5500",
     },
 ]
 
 
-def pid_file(service_name: str) -> Path:
-    return PID_DIR / f"{service_name}.pid"
-
-
-def log_file(service_name: str) -> Path:
-    return LOG_DIR / f"{service_name}.log"
-
-
-def is_running(pid: int) -> bool:
+def pid_running(pid: int) -> bool:
     try:
         os.kill(pid, 0)
         return True
@@ -58,70 +70,111 @@ def is_running(pid: int) -> bool:
         return True
 
 
-def read_existing_pid(service_name: str) -> int | None:
-    path = pid_file(service_name)
+def process_matches_pid(pid: int, script_name: str) -> bool:
+    if not pid_running(pid):
+        return False
 
-    if not path.exists():
-        return None
+    cmdline_path = Path(f"/proc/{pid}/cmdline")
+    if not cmdline_path.exists():
+        return False
 
     try:
-        return int(path.read_text().strip())
-    except ValueError:
-        return None
+        cmdline = cmdline_path.read_text(errors="ignore").replace("\x00", " ")
+        return script_name in cmdline
+    except Exception:
+        return False
 
 
-def start_service(service: dict) -> None:
+def pid_file_running(pid_path: Path, script_name: str) -> bool:
+    if not pid_path.exists():
+        return False
+
+    try:
+        pid = int(pid_path.read_text().strip())
+    except Exception:
+        return False
+
+    return process_matches_pid(pid, script_name)
+
+
+def pgrep_running(script_name: str) -> bool:
+    result = subprocess.run(
+        ["pgrep", "-af", script_name],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    if result.returncode != 0:
+        return False
+
+    for line in result.stdout.splitlines():
+        if script_name in line and "pgrep" not in line:
+            return True
+
+    return False
+
+
+def start_service(service: dict):
     name = service["name"]
-    script = service["script"]
-    script_path = SCRIPTS_DIR / script
+    script_name = service["script"]
+    script_path = SCRIPTS_DIR / script_name
+    log_path = LOG_DIR / service["log"]
+    pid_path = PID_DIR / service["pid"]
 
     if not script_path.exists():
         print(f"[!] Missing script: {script_path}")
         return
 
-    existing_pid = read_existing_pid(name)
-
-    if existing_pid and is_running(existing_pid):
-        print(f"[=] {name} already running with PID {existing_pid}")
+    if pid_file_running(pid_path, script_name) or pgrep_running(script_name):
+        print(f"[=] Already running: {name} ({script_name})")
         return
 
-    PID_DIR.mkdir(parents=True, exist_ok=True)
-    LOG_DIR.mkdir(parents=True, exist_ok=True)
-
-    out_path = log_file(name)
-
-    out_file = out_path.open("a", encoding="utf-8")
+    log_file = log_path.open("a", encoding="utf-8")
 
     process = subprocess.Popen(
-        [sys.executable, str(script_path)],
+        [sys.executable, "-u", str(script_path)],
         cwd=str(BASE_DIR),
-        stdout=out_file,
+        stdout=log_file,
         stderr=subprocess.STDOUT,
+        stdin=subprocess.DEVNULL,
         start_new_session=True,
     )
 
-    pid_file(name).write_text(str(process.pid), encoding="utf-8")
+    pid_path.write_text(str(process.pid), encoding="utf-8")
 
-    port_text = f" on port {service['port']}" if service["port"] else ""
-    print(f"[+] Started {name}{port_text} with PID {process.pid}")
-    print(f"    Log: {out_path}")
+    print(f"[+] Started {name}")
+    print(f"    PID: {process.pid}")
+    print(f"    Script: {script_path}")
+    print(f"    Log: {log_path}")
 
 
-def main() -> None:
+def main():
     print("[+] Starting NetSentry Python services...")
     print(f"[+] Base directory: {BASE_DIR}")
 
     for service in SERVICES:
         start_service(service)
-        time.sleep(0.5)
+        time.sleep(0.2)
+
+    print("\n[+] Listening ports:")
+    subprocess.run(
+        ["ss", "-tulpen"],
+        check=False,
+    )
+
+    print("\n[+] Matching processes:")
+    subprocess.run(
+        [
+            "pgrep",
+            "-af",
+            "netsentry_dashboard.py|netsentry_status_api.py|http_test_service.py|honeypot_lite.py|snort_alert_watcher.py|netsentry_portal.py",
+        ],
+        check=False,
+    )
 
     print("\n[+] Done.")
-    print("[+] Useful URLs:")
-    print("    IDS Dashboard:   http://192.168.1.19:5050")
-    print("    Status API:      http://192.168.1.19:5051")
-    print("    HTTP Test:       http://192.168.1.19:8081")
-    print("    Honeypot-lite:   http://192.168.1.19:8082")
-    print("\n[!] Snort itself is not started by this script. Start Snort separately with sudo.")
+    print("[!] Snort itself is not started here because it needs sudo.")
 
 
 if __name__ == "__main__":
