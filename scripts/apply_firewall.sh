@@ -59,6 +59,14 @@ sudo iptables -A INPUT -p tcp --dport 8081 -j DROP
 echo "[+] Honeypot-lite LAN reachable..."
 sudo iptables -A INPUT -p tcp -s "$LAN_NET" --dport 8082 -j ACCEPT
 
+echo "[+] FTP ACCESS PORTS ADMIN ONLY ..."
+sudo iptables -A INPUT -p tcp -s "$ADMIN_IP" --dport 21 -j ACCEPT
+sudo iptables -A INPUT -p tcp --dport 21 -j DROP
+
+echo "[+] FTP PASSIVE PORTS ADMIN ONLY ..."
+sudo iptables -A INPUT -p tcp -s "$ADMIN_IP" --dport 40000:40100 -j ACCEPT
+sudo iptables -A INPUT -p tcp --dport 40000:40100 -j DROP
+
 echo "[+] Log and drop everything else..."
 sudo iptables -A INPUT -m limit --limit 5/min -j LOG --log-prefix "NETSENTRY_INPUT_DROP: " --log-level 4
 sudo iptables -A INPUT -j DROP

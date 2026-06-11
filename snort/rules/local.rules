@@ -1,3 +1,6 @@
+
+
+
 alert icmp !192.168.1.11 any -> 192.168.1.19 any (
 
 msg:" Netsentry ICMP ping detected ";
@@ -140,5 +143,41 @@ rev:1;
 
 )
 
+alert tcp !192.168.1.11 any -> 192.168.1.19 21 (
 
+msg:" NETSENTRY FTP control access attempt from non-admin detected "; 
+flags:S;
+sid:10000016;
+rev:1;
+
+)
+
+
+alert tcp !192.168.1.11 any -> 192.168.1.19 40000:40100 (
+
+msg:" NETSENTRY FTP passive data ports access  attempt from non-admin detected ";
+flags:S;
+sid:10000017;
+rev:1;
+
+)
+
+
+alert tcp any any  -> 192.168.1.19 21 (
+msg:" NETSENTRY FTP USER command detected ";
+flow:to_server,established;
+content:"USER ";
+sid:10000018;
+rev:2;
+)
+
+
+alert tcp any any  -> 192.168.1.19 21 (
+
+msg:" NETSENTRY FTP ANONYMOUS login attempt  detected ";
+flow:to_server,established;
+content:"USER anonymous",nocase;
+sid:10000019;
+rev:1;
+)
 

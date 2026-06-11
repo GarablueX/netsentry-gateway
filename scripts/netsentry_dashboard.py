@@ -27,7 +27,14 @@ SID_NAMES = {
     "10000013": "HTTP /wp-login.php Probe",
     "10000014": "HTTP /phpmyadmin Probe",
     "10000015": "Honeypot-lite Access Attempt",
+    "10000016": "FTP Control Access Attempt",
+    "10000017": "FTP Passive Data Access Attempt",
+    "10000018": "NETSENTRY FTP USER command detected",
+    "10000019": "NETSENTRY FTP USER Anonymous command detected",
+
 }
+
+
 
 
 HTML_TEMPLATE = """
