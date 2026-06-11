@@ -359,7 +359,16 @@ honeypot logging
 Ethernet migration
 ```
 
-## Notes
+## 19. GitHub Commit Attribution Fix
+
+A GitHub contribution-counting issue was investigated.
+
+The repository was updating correctly after pushes from Debian, but the commits were not appearing correctly on the GitHub contribution dashboard.
+
+The cause was a Git email mismatch.
+
+
+
 
 This is still a host-facing lab.
 
