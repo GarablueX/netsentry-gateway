@@ -9,17 +9,11 @@ echo "[+] Applying NetSentry temporary lab firewall policy"
 echo "[+] Admin IP: $ADMIN_IP"
 echo "[+] LAN:      $LAN_NET"
 
-echo "[!] Safety note: this script flushes INPUT and rebuilds lab rules."
-read -rp "Continue? Type YES: " CONFIRM
-
-if [ "$CONFIRM" != "YES" ]; then
-    echo "[!] Aborted."
-    exit 1
-fi
-
 echo "[+] Installing 120-second emergency rollback..."
-sudo sh -c 'sleep 120; iptables -F INPUT; iptables -P INPUT ACCEPT' &
+sudo sh -c "sleep 120; iptables -F INPUT; iptables -P INPUT ACCEPT" &
 ROLLBACK_PID=$!
+echo "[+] Rollback PID: $ROLLBACK_PID"
+
 
 echo "[+] Flushing INPUT chain..."
 sudo iptables -F INPUT
@@ -78,6 +72,9 @@ echo "[+] Firewall applied."
 echo "[+] Testing SSH is still your responsibility before closing this session."
 echo "[+] Canceling rollback in 5 seconds if script reached the end..."
 sleep 5
-kill "$ROLLBACK_PID" 2>/dev/null || true
+
+if [ -n "${ROLLBACK_PID:-}" ]; then
+    kill "$ROLLBACK_PID" 2>/dev/null || true
+fi
 
 sudo iptables -L INPUT -n -v --line-numbers

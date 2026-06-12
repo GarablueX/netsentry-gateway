@@ -42,3 +42,11 @@ Thumbs.db
 
 # Backup files
 *.bak
+
+# NetSentry AP local configs with real secrets
+config/ap/hostapd-netsentry.conf
+config/ap/dnsmasq-netsentry.conf
+
+# Evidence / runtime captures
+evidence/
+*.pcap
