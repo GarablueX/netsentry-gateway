@@ -57,3 +57,4 @@ evidence/
 *.jsonl
 *.log
 *.pid
+config/ap/hostpad-netsentry.conf
