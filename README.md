@@ -355,21 +355,6 @@ docs/ap-gateway-progress.md
 
 ---
 
-## Do Not Commit
-
-Do not commit:
-
-```text
-Real Wi-Fi passwords
-Real hostapd config
-Runtime logs
-Snort alert files
-JSONL logs
-PCAP files
-Evidence files
-PID files
-```
-
 Recommended `.gitignore` entries:
 
 ```text
