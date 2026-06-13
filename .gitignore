@@ -46,6 +46,7 @@ Thumbs.db
 # NetSentry AP local configs with real secrets
 config/ap/hostapd-netsentry.conf
 config/ap/dnsmasq-netsentry.conf
+config/ap/hostpad-netsentry.conf
 
 # Evidence / runtime captures
 evidence/
