@@ -50,3 +50,6 @@ config/ap/dnsmasq-netsentry.conf
 # Evidence / runtime captures
 evidence/
 *.pcap
+*.jsonl
+*.log
+*.pid

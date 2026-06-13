@@ -1,80 +1,156 @@
 #!/usr/bin/env bash
-
-set -e
+set -euo pipefail 
 
 ADMIN_IP="192.168.1.11"
-LAN_NET="192.168.1.0/24"
+HOME_LAN="192.168.1.0/24"
+AP_NET="10.10.10.0/24"
+WAN_I="enp3s0"
+AP_I="wlx200db0220b9a"
 
-echo "[+] Applying NetSentry temporary lab firewall policy"
+ROLLBACK_PID_FILE="/tmp/netsentry-fw-rollback.pid"
+
+
+
+echo "[+] Applying NetSentry gateway firewall test rules"
 echo "[+] Admin IP: $ADMIN_IP"
-echo "[+] LAN:      $LAN_NET"
-
-echo "[+] Installing 120-second emergency rollback..."
-sudo sh -c "sleep 120; iptables -F INPUT; iptables -P INPUT ACCEPT" &
-ROLLBACK_PID=$!
-echo "[+] Rollback PID: $ROLLBACK_PID"
+echo "[+] Home LAN: $HOME_LAN"
+echo "[+] AP LAN:   $AP_NET"
+echo "[+] WAN F:   $WAN_I"
+echo "[+] AP I:    $AP_I"
 
 
-echo "[+] Flushing INPUT chain..."
-sudo iptables -F INPUT
-sudo iptables -P INPUT ACCEPT
 
-echo "[+] Base rules..."
-sudo iptables -A INPUT -i lo -j ACCEPT
-sudo iptables -A INPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
 
-echo "[+] SSH/SFTP admin only..."
-sudo iptables -A INPUT -p tcp -s "$ADMIN_IP" --dport 22 -j ACCEPT
-sudo iptables -A INPUT -p tcp --dport 22 -j DROP
 
-echo "[+] PORTAL FOR ALL ..."
-sudo iptables -A INPUT -p tcp -s "$LAN_NET" --dport 5500 -j ACCEPT
+sudo iptables -P INPUT ACCEPT 
+sudo iptables -P FORWARD ACCEPT 
+sudo iptables -P OUTPUT ACCEPT
 
-echo "[+] AdGuard UI admin only..."
-sudo iptables -A INPUT -p tcp -s "$ADMIN_IP" --dport 3001 -j ACCEPT
-sudo iptables -A INPUT -p tcp --dport 3001 -j DROP
+sudo iptables -F
+sudo iptables -t nat -F
+sudo iptables -t mangle -F
+sudo iptables -t raw -F
 
-echo "[+] DNS from LAN..."
-sudo iptables -A INPUT -p udp -s "$LAN_NET" --dport 53 -j ACCEPT
-sudo iptables -A INPUT -p tcp -s "$LAN_NET" --dport 53 -j ACCEPT
+sudo iptables -X
+sudo iptables -t nat -X
+sudo iptables -t mangle -X
+sudo iptables -t raw -X
 
-echo "[+] ICMP from LAN..."
-sudo iptables -A INPUT -p icmp -s "$LAN_NET" -j ACCEPT
 
-echo "[+] IDS dashboard admin only..."
+
+sudo iptables -A INPUT  -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+sudo iptables -A INPUT  -m conntrack --ctstate INVALID -j DROP
+
+
+# NAT TRASLATIONS 
+sudo sysctl -w net.ipv4.ip_forward=1
+
+#disable NAT  if communication with home lan 
+
+sudo iptables -t nat -A POSTROUTING -s "$AP_NET" -d "$HOME_LAN" -j RETURN 
+
+# nat if packet is going to the internet 
+
+sudo iptables -t nat -A POSTROUTING -s "$AP_NET" -o "$WAN_I" -j MASQUERADE 
+
+sudo iptables -A INPUT -i lo -j ACCEPT 
+
+# ALLOW PINGS FROM BOTH LANS 
+
+sudo iptables -A INPUT -p icmp -s "$HOME_LAN" -j ACCEPT
+
+sudo iptables -A INPUT -p icmp -s "$AP_NET" -j ACCEPT
+
+#SSH ONLY FOR ADMIN 
+
+sudo iptables -A INPUT -p tcp -s "$ADMIN_IP" --dport 22  -j ACCEPT
+
+#ALLOW AD GUARD DNS FOR AP NET AND HOME LAN "
+
+sudo iptables -A INPUT -p udp -s "$AP_NET" --dport 53 -j ACCEPT
+
+sudo iptables -A INPUT -p tcp  -s "$AP_NET" --dport 53 -j ACCEPT
+
+sudo iptables -A INPUT -p udp -s "$HOME_LAN" --dport 53 -j ACCEPT
+
+sudo iptables -A INPUT -p tcp  -s "$HOME_LAN" --dport 53 -j ACCEPT
+
+# ENABLE DHCP FOR AP LAN 
+
+sudo iptables -A INPUT -i "$AP_I"  -p udp --sport 68 --dport 67 -j  ACCEPT 
+
+#netsentry portal from both lans 
+
+sudo iptables -A INPUT -p tcp -s "$HOME_LAN" --dport 5500 -j ACCEPT 
+
+sudo iptables -A INPUT -p tcp -s "$AP_NET" --dport 5500 -j ACCEPT
+
+#HOney pot for both lans 
+
+sudo iptables -A INPUT -p tcp -s "$HOME_LAN" --dport 8082 -j ACCEPT
+
+sudo iptables -A INPUT -p tcp -s "$AP_NET" --dport 8082 -j ACCEPT
+
+# STATUS_API for both lans  
+
+sudo iptables -A INPUT -p tcp -s "$HOME_LAN" --dport 5051 -j ACCEPT
+
+sudo iptables -A INPUT -p tcp -s "$AP_NET" --dport 5051 -j ACCEPT
+
+# ADMIN ONLY SERVICES  
+
 sudo iptables -A INPUT -p tcp -s "$ADMIN_IP" --dport 5050 -j ACCEPT
-sudo iptables -A INPUT -p tcp --dport 5050 -j DROP
 
-echo "[+] Status API admin only..."
-sudo iptables -A INPUT -p tcp -s "$ADMIN_IP" --dport 5051 -j ACCEPT
-sudo iptables -A INPUT -p tcp --dport 5051 -j DROP
+sudo iptables -A INPUT -p tcp -s "$ADMIN_IP" --dport 3001 -j ACCEPT
 
-echo "[+] HTTP test service admin only..."
-sudo iptables -A INPUT -p tcp -s "$ADMIN_IP" --dport 8081 -j ACCEPT
-sudo iptables -A INPUT -p tcp --dport 8081 -j DROP
+sudo iptables -A INPUT -p tcp -s "$ADMIN_IP" --dport 8081  -j ACCEPT
 
-echo "[+] Honeypot-lite LAN reachable..."
-sudo iptables -A INPUT -p tcp -s "$LAN_NET" --dport 8082 -j ACCEPT
-
-echo "[+] FTP ACCESS PORTS ADMIN ONLY ..."
 sudo iptables -A INPUT -p tcp -s "$ADMIN_IP" --dport 21 -j ACCEPT
-sudo iptables -A INPUT -p tcp --dport 21 -j DROP
 
-echo "[+] FTP PASSIVE PORTS ADMIN ONLY ..."
 sudo iptables -A INPUT -p tcp -s "$ADMIN_IP" --dport 40000:40100 -j ACCEPT
-sudo iptables -A INPUT -p tcp --dport 40000:40100 -j DROP
 
-echo "[+] Log and drop everything else..."
-sudo iptables -A INPUT -m limit --limit 5/min -j LOG --log-prefix "NETSENTRY_INPUT_DROP: " --log-level 4
-sudo iptables -A INPUT -j DROP
 
-echo "[+] Firewall applied."
-echo "[+] Testing SSH is still your responsibility before closing this session."
-echo "[+] Canceling rollback in 5 seconds if script reached the end..."
-sleep 5
+#DROP EVERYTHING
 
-if [ -n "${ROLLBACK_PID:-}" ]; then
-    kill "$ROLLBACK_PID" 2>/dev/null || true
-fi
+sudo iptables -A  INPUT -j DROP 
 
-sudo iptables -L INPUT -n -v --line-numbers
+#INTER VLAN ROUTING 
+
+sudo iptables -A FORWARD -i "$WAN_I"  -o "$AP_I" -s "$HOME_LAN" -d "$AP_NET"  -j ACCEPT 
+
+sudo iptables -A FORWARD -i  "$AP_I" -o "$WAN_I" -s "$AP_NET" -d "$HOME_LAN" -j ACCEPT 
+
+
+
+#AP LAN TO UPSTREAM TO THE ISP ROUTER 
+
+sudo iptables -A FORWARD -i "$AP_I" -o "$WAN_I" -s "$AP_NET" -j ACCEPT 
+
+sudo iptables -A FORWARD -i "$WAN_I" -o "$AP_I" -d "$AP_NET" -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT 
+
+sudo iptables -A  FORWARD -j DROP 
+
+
+
+
+#DROP EVERYTHING ELSE (STATEFULL FIREWALL)
+
+sudo iptables -P INPUT DROP 
+
+sudo iptables -P FORWARD DROP 
+
+sudo iptables -P OUTPUT ACCEPT 
+
+
+#checking results 
+
+ #input 
+sudo iptables -L INPUT -n -v --line-numbers 
+
+ #forward
+sudo iptables -L FORWARD -n -v --line-numbers  
+
+ #output 
+sudo iptables -L OUTPUT -n -v --line-numbers 
+
+
