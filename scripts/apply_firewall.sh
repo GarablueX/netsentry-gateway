@@ -61,6 +61,11 @@ sudo iptables -A INPUT -p icmp -s "$HOME_LAN" -j ACCEPT
 
 sudo iptables -A INPUT -p icmp -s "$AP_NET" -j ACCEPT
 
+#
+
+
+
+
 #SSH ONLY FOR ADMIN 
 
 sudo iptables -A INPUT -p tcp -s "$ADMIN_IP" --dport 22  -j ACCEPT
@@ -109,6 +114,12 @@ sudo iptables -A INPUT -p tcp -s "$ADMIN_IP" --dport 21 -j ACCEPT
 
 sudo iptables -A INPUT -p tcp -s "$ADMIN_IP" --dport 40000:40100 -j ACCEPT
 
+# Nginx web frontend for NetSentry unified web app
+sudo iptables -A INPUT -p tcp -s "$HOME_LAN" --dport 80 -j ACCEPT
+sudo iptables -A INPUT -p tcp -s "$AP_NET" --dport 80 -j ACCEPT
+
+sudo iptables -A INPUT -p tcp -s "$HOME_LAN" --dport 443 -j ACCEPT
+sudo iptables -A INPUT -p tcp -s "$AP_NET" --dport 443 -j ACCEPT
 
 #DROP EVERYTHING
 
