@@ -718,7 +718,26 @@ Nginx was running, but Flask was not reachable on `127.0.0.1:5000`.
 
 Fix:
 
+
 Checked the systemd service, restored needed templates, restarted the web service, and confirmed Flask was listening locally.
+
+## Boot Services Final State
+
+After reboot, the following services are expected to start automatically:
+
+- ssh.service: remote SSH access
+- nginx.service: web reverse proxy
+- netsentry-web.service: Flask web application on 127.0.0.1:5000
+- netsentry-ap-interface.service: configures AP interface wlx200db0220b9a with 10.10.10.1/24
+- netsentry-firewall.service: applies NetSentry firewall/NAT rules at boot
+- netsentry-dnsmasq.service: DHCP-only service for AP clients
+- hostapd.service: Wi-Fi access point
+- AdGuardHome.service: DNS filtering and AdGuard API
+
+The default Debian dnsmasq.service is disabled because AdGuardHome owns DNS port 53.
+NetSentry uses netsentry-dnsmasq.service for DHCP only on port 67.
+
+The old netsentry-server.service was removed because it depended on deleted legacy startup scripts and was replaced by netsentry-web.service.
 
 ## 18. Current Limitations
 
