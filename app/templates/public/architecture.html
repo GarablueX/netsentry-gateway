@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <h3>Final Product Flow</h3>
+  <pre>Client device
+  ↓ Wi-Fi
+NetSentry AP interface: {{ ap_interface }} / {{ ap_ip }}
+  ↓ DHCP + DNS + firewall policy
+Debian gateway core
+  ├── dnsmasq DHCP
+  ├── AdGuard DNS filtering
+  ├── iptables firewall + NAT
+  ├── Snort IDS alert pipeline
+  ├── honeypot/test logs
+  └── Flask dashboard behind Nginx
+  ↓
+WAN/HOME interface: {{ wan_interface }} / {{ home_ip }}
+  ↓
+ISP router / Internet</pre>
+</div>
+
+<div class="card">
+  <h3>Web Architecture</h3>
+  <pre>Browser
+  ↓
+Nginx :80/:443
+  ├── serves public web access
+  ├── restricts /admin/* and /api/* to LAN
+  └── proxies to Flask
+      ↓
+Flask App :5000 on 127.0.0.1 only
+  ├── Public pages
+  ├── Admin dashboard
+  └── Read-only API</pre>
+</div>
+
+<div class="grid">
+  <div class="card"><h3>Public Side</h3><p><code>/</code>, <code>/about</code>, <code>/features</code>, <code>/architecture</code>, <code>/status</code>, <code>/docs</code>, <code>/hardware</code>, and <code>/contact</code> explain the project without exposing private logs or client data.</p></div>
+  <div class="card"><h3>Admin Side</h3><p><code>/admin/*</code> shows dashboard, clients, DNS, firewall, IDS, logs, and network state. It requires login and is also protected by Nginx LAN-only access.</p></div>
+  <div class="card"><h3>API Side</h3><p><code>/api/*</code> returns structured read-only data from Linux commands, AdGuard, Snort alert files, DHCP leases, and logs.</p></div>
+</div>
+
+<div class="card">
+  <h3>Data Sources</h3>
+  <table>
+    <tr><th>Source</th><th>Used for</th></tr>
+    <tr><td>dnsmasq leases</td><td>Present AP clients</td></tr>
+    <tr><td>AdGuard API</td><td>DNS queries, blocks, top clients/domains</td></tr>
+    <tr><td>Snort <code>alerts.jsonl</code></td><td>IDS alert table and filters</td></tr>
+    <tr><td>iptables helper</td><td>Human-readable firewall matrix and raw rules</td></tr>
+    <tr><td>Linux commands</td><td>Interfaces, routes, services, ports, system status</td></tr>
+    <tr><td>JSONL/text logs</td><td>Honeypot, portal, HTTP test, app, agent, Snort fast logs</td></tr>
+  </table>
+</div>
+
+<div class="card"><h3>Security Boundary</h3><p>Flask stays localhost-only. Nginx is the front door. Public routes show safe project information only. Admin/API routes are protected by login and LAN-only Nginx rules. Active firewall changes, packet captures, and service restarts are postponed until a privileged agent exists.</p></div>
+{% endblock %}

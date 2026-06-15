@@ -1,0 +1,19 @@
+[Unit]
+Description=NetSentry Unified Flask Web App
+After=network-online.target nginx.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=gbx
+Group=gbx
+WorkingDirectory=/home/gbx/netsentry-gateway
+Environment=NETSENTRY_BASE_DIR=/home/gbx/netsentry-gateway
+EnvironmentFile=/etc/netsentry/netsentry-web.env
+ExecStart=/usr/bin/python3 /home/gbx/netsentry-gateway/app/netsentry_app.py
+Restart=on-failure
+RestartSec=3
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

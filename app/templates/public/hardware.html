@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="grid">
+  <div class="metric"><span>System</span><strong>{{ hardware.system }}</strong></div>
+  <div class="metric"><span>Operating system</span><strong>{{ hardware.os }}</strong></div>
+  <div class="metric"><span>CPU</span><strong>{{ hardware.cpu }}</strong></div>
+  <div class="metric"><span>Memory</span><strong>{{ hardware.memory }}</strong></div>
+</div>
+
+<div class="card"><h3>Gateway Hardware Setup</h3>
+<table>
+<tr><th>Component</th><th>Value</th><th>Role</th></tr>
+<tr><td>Debian server</td><td>{{ hardware.system }}</td><td>Router, firewall, DNS filter point, IDS visibility, dashboard host</td></tr>
+<tr><td>Storage</td><td>{{ hardware.disk }}</td><td>Operating system, logs, project files, local database later</td></tr>
+<tr><td>WAN/Home NIC</td><td>{{ hardware.wan_nic }}</td><td><code>{{ wan_interface }}</code> connects to HOME/ISP LAN {{ home_lan }} using {{ home_ip }}</td></tr>
+<tr><td>AP Wi-Fi adapter</td><td>{{ hardware.ap_adapter }}</td><td><code>{{ ap_interface }}</code> provides AP LAN {{ ap_lan }} using {{ ap_ip }}</td></tr>
+<tr><td>Admin PC</td><td>{{ admin_ip }}</td><td>Allowed sensitive admin access</td></tr>
+<tr><td>SSID</td><td>{{ ssid }}</td><td>Client Wi-Fi network</td></tr>
+</table></div>
+
+<div class="card"><h3>Dynamic Hardware Probe</h3><p class="muted">When <code>inxi</code> is installed, NetSentry reads live hardware data. Otherwise this page still shows the static known setup.</p><details><summary>Show raw inxi output</summary><pre>{{ hardware.dynamic_inxi.stdout or hardware.dynamic_inxi.stderr }}</pre></details></div>
+
+<div class="card"><h3>Security Note</h3><p>AP security must remain WPA2/WPA3 with a strong passphrase. Public internet exposure is not recommended until HTTPS, login hardening, rate limits, and audit logging are complete.</p></div>
+{% endblock %}

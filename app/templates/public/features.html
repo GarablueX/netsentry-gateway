@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="grid">
+  <div class="card"><h3>Wi-Fi AP</h3><p>hostapd provides the NetSentry client access point.</p></div>
+  <div class="card"><h3>DHCP</h3><p>dnsmasq assigns client IPs and gateway/DNS options.</p></div>
+  <div class="card"><h3>DNS Filtering</h3><p>AdGuard Home filters DNS requests and provides statistics.</p></div>
+  <div class="card"><h3>Firewall</h3><p>iptables enforces allowed services, admin-only ports, NAT, and forwarding.</p></div>
+  <div class="card"><h3>IDS</h3><p>Snort writes alerts that are parsed into JSONL and displayed in the dashboard.</p></div>
+  <div class="card"><h3>Logs</h3><p>Honeypot, test service, portal, Snort, and application logs are centralized.</p></div>
+</div>
+{% endblock %}

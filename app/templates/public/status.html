@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="grid">
+  <div class="metric"><span>Gateway</span><strong class="ok">{{ status.gateway }}</strong></div>
+  <div class="metric"><span>Internet</span><strong class="{% if status.internet_ok %}ok{% else %}bad{% endif %}">{{ status.internet }}</strong></div>
+  <div class="metric"><span>Uptime</span><strong>{{ status.uptime }}</strong></div>
+  <div class="metric"><span>Last update</span><strong>{{ status.last_update }}</strong></div>
+</div>
+<div class="card">
+  <h3>Public-safe status</h3>
+  <p class="muted">This page intentionally does not expose clients, DNS logs, Snort alerts, firewall rules, or internal service details.</p>
+</div>
+{% endblock %}

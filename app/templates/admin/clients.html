@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card"><h3>Client Filter</h3><form class="filters" method="get"><input name="q" value="{{ data.query }}" placeholder="IP, MAC, hostname"><button>Filter</button><a class="button" href="/admin/clients">Clear</a></form><p class="muted">Lease file: {{ data.lease_file or data.warning }}</p></div>
+<div class="card"><h3>DHCP Clients</h3><table><tr><th>IP</th><th>MAC</th><th>Hostname</th><th>Expires</th></tr>
+{% for c in data.clients %}<tr><td>{{ c.ip }}</td><td>{{ c.mac }}</td><td>{{ c.hostname }}</td><td>{{ c.expires }}</td></tr>{% endfor %}
+{% if not data.clients %}<tr><td colspan="4">No clients found.</td></tr>{% endif %}
+</table></div>
+{% endblock %}

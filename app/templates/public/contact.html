@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="hero">
+  <h3>Contact & Project Links</h3>
+  <p>{{ contact_note }}</p>
+  <div class="button-row"><a class="button" href="{{ github_url }}">GitHub repository</a></div>
+</div>
+
+<div class="grid">
+  <div class="card"><h3>Project owner</h3><p>{{ project_owner }}</p></div>
+  <div class="card"><h3>Contact</h3><p>{{ contact_email }}</p></div>
+  <div class="card"><h3>Disclosure note</h3><p>This is a lab and portfolio security gateway project. Do not submit sensitive credentials or private network data through public forms.</p></div>
+</div>
+
+<div class="card"><h3>Development Credit</h3><p>Some frontend presentation work, including HTML/CSS layout assistance, was done with help from a friend because the project owner is focused on the cybersecurity and infrastructure layers. The friend’s identity will only be revealed after explicit consent.</p></div>
+{% endblock %}

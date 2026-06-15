@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <h3>External Repository</h3>
+  <p>The GitHub repository contains the public project history, source code, documentation, and future test results.</p>
+  <a class="button" href="{{ github_url }}">Open GitHub repository</a>
+</div>
+
+<div class="card">
+  <h3>Local Repository Documentation</h3>
+  <table><tr><th>File</th><th>Size</th><th>Open</th></tr>
+    {% for doc in docs %}<tr><td>{{ doc.name }}</td><td>{{ doc.size }} bytes</td><td><a class="button secondary" href="/docs?file={{ doc.name }}">Preview</a></td></tr>{% endfor %}
+    {% if not docs %}<tr><td colspan="3">No Markdown docs found under docs/.</td></tr>{% endif %}
+  </table>
+</div>
+{% if selected %}
+<div class="card"><h3>{{ selected }}</h3><pre>{{ selected_content }}</pre></div>
+{% endif %}
+{% endblock %}

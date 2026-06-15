@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="grid">
+  <div class="metric"><span>API</span><strong class="{% if dns.stats_ok %}ok{% else %}bad{% endif %}">{% if dns.stats_ok %}connected{% else %}error{% endif %}</strong></div>
+  <div class="metric"><span>Total queries</span><strong>{{ dns.queries }}</strong></div>
+  <div class="metric"><span>Blocked</span><strong>{{ dns.blocked }}</strong></div>
+  <div class="metric"><span>Blocked %</span><strong>{{ dns.blocked_percent }}%</strong></div>
+</div>
+{% if not dns.stats_ok %}<div class="note">AdGuard API is not readable. URL: {{ dns.configured_url }}. Auth configured: {{ dns.auth_configured }}. Check <code>NETSENTRY_ADGUARD_USER</code> and <code>NETSENTRY_ADGUARD_PASSWORD</code>.</div>{% endif %}
+
+<div class="two-col">
+  <div class="card"><h3>Top Blocked Domains</h3><table><tr><th>Domain</th><th>Count</th></tr>{% for row in dns.top_blocked %}<tr><td>{{ row.name }}</td><td>{{ row.count }}</td></tr>{% endfor %}{% if not dns.top_blocked %}<tr><td colspan="2">No blocked-domain stats.</td></tr>{% endif %}</table></div>
+  <div class="card"><h3>Top Clients</h3><table><tr><th>Client</th><th>Count</th></tr>{% for row in dns.top_clients %}<tr><td>{{ row.name }}</td><td>{{ row.count }}</td></tr>{% endfor %}{% if not dns.top_clients %}<tr><td colspan="2">No client stats.</td></tr>{% endif %}</table></div>
+</div>
+<div class="card"><h3>Top Queried Domains</h3><table><tr><th>Domain</th><th>Count</th></tr>{% for row in dns.top_queried %}<tr><td>{{ row.name }}</td><td>{{ row.count }}</td></tr>{% endfor %}{% if not dns.top_queried %}<tr><td colspan="2">No queried-domain stats.</td></tr>{% endif %}</table></div>
+
+<div class="card"><h3>Recent DNS Queries</h3><table><tr><th>Time</th><th>Client</th><th>Domain</th><th>Type</th><th>Status</th></tr>
+{% for q in dns.recent_queries %}<tr><td>{{ q.time }}</td><td>{{ q.client }}</td><td>{{ q.domain }}</td><td>{{ q.type }}</td><td>{{ q.status }}</td></tr>{% endfor %}
+{% if not dns.recent_queries %}<tr><td colspan="5">No query log data shown.</td></tr>{% endif %}
+</table></div>
+<div class="card"><h3>Raw AdGuard API Debug</h3><details><summary>Show raw API responses</summary><pre>{{ dns.raw | tojson(indent=2) }}</pre></details></div>
+{% endblock %}

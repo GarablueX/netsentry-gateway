@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="grid">
+  <div class="metric"><span>Hostname</span><strong>{{ status.hostname }}</strong></div>
+  <div class="metric"><span>Load</span><strong>{{ status.loadavg }}</strong></div>
+  <div class="metric"><span>Memory</span><strong>{{ status.memory_percent }}%</strong></div>
+  <div class="metric"><span>Disk</span><strong>{{ status.disk_percent }}%</strong></div>
+</div>
+<div class="card"><h3>Interfaces</h3><table><tr><th>Name</th><th>Role</th><th>State</th><th>MAC</th><th>IPv4</th></tr>{% for iface in interfaces.interfaces %}<tr><td>{{ iface.name }}</td><td>{{ iface.role }}</td><td>{{ iface.state }}</td><td>{{ iface.mac }}</td><td>{{ iface.ipv4|join(', ') }}</td></tr>{% endfor %}</table></div>
+<div class="card"><h3>Routes</h3><pre>{{ routes.raw.stdout or routes.raw.stderr }}</pre></div>
+<div class="card"><h3>Listening Ports</h3><pre>{{ ports.raw.stdout or ports.raw.stderr }}</pre></div>
+{% endblock %}

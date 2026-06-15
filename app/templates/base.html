@@ -1,0 +1,50 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ title }} - NetSentry</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/netsentry.css') }}">
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <h1>Net<span class="dot">Sentry</span></h1>
+      <p>Secure Debian Gateway</p>
+    </div>
+
+    <div class="nav-section">
+      <h3>Public</h3>
+      {% for href, label in public_routes %}
+        <a class="{% if request.path == href %}active{% endif %}" href="{{ href }}">{{ label }}</a>
+      {% endfor %}
+    </div>
+
+    <div class="nav-section">
+      <h3>Admin</h3>
+      {% for href, label in admin_routes %}
+        <a class="{% if request.path == href %}active{% endif %}" href="{{ href }}">{{ label }}</a>
+      {% endfor %}
+      {% if is_logged_in() %}
+        <a href="/admin/logout">Logout {{ current_user }}</a>
+      {% else %}
+        <a class="{% if request.path == '/admin/login' %}active{% endif %}" href="/admin/login">Login</a>
+      {% endif %}
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <h2>{{ title }}</h2>
+        <p>{{ subtitle }}</p>
+      </div>
+
+    </div>
+
+    {% block content %}{% endblock %}
+  </main>
+</div>
+</body>
+</html>

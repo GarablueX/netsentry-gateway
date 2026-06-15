@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="hero hero-home">
+  <div class="logo-mark big"><span>N</span></div>
+  <div>
+    <h3>NetSentry Secure Gateway</h3>
+    <p>NetSentry is a Debian-based security gateway. Client devices connect to the NetSentry Wi-Fi AP, receive controlled DHCP/DNS settings, and have their traffic routed through filtering, firewall policy, monitoring, IDS visibility, and logs before it reaches the upstream ISP network.</p>
+    <div class="button-row">
+      <a class="button" href="/about">About the project</a>
+      <a class="button" href="/features">View features</a>
+      <a class="button" href="/status">Live public status</a>
+      <a class="button secondary" href="/architecture">Architecture</a>
+      <a class="button secondary" href="/docs">Documentation</a>
+    </div>
+  </div>
+</div>
+
+<div class="grid">
+  <div class="metric"><span>Gateway</span><strong class="ok">{{ status.gateway }}</strong></div>
+  <div class="metric"><span>Internet</span><strong class="{% if status.internet_ok %}ok{% else %}bad{% endif %}">{{ status.internet }}</strong></div>
+  <div class="metric"><span>Uptime</span><strong>{{ status.uptime }}</strong></div>
+  <div class="metric"><span>Mode</span><strong>AP Gateway</strong></div>
+</div>
+
+<div class="grid">
+  <div class="card"><h3>Controlled Access</h3><p>AP clients live on a dedicated <code>10.10.10.0/24</code> network and pass through NetSentry for routing, DNS, and firewall policy.</p></div>
+  <div class="card"><h3>Security Visibility</h3><p>The admin dashboard collects Snort alerts, AdGuard DNS statistics, firewall state, DHCP clients, honeypot attempts, logs, and interface status.</p></div>
+  <div class="card"><h3>Safe V1 Design</h3><p>The current web interface is read-only for gateway control. Active response is reserved for a future privileged agent with audit logging.</p></div>
+</div>
+
+<div class="card"><h3>Explore More</h3><p>The public pages explain the project without exposing private data. The admin dashboard is protected and used for operational monitoring.</p><div class="button-row"><a class="button" href="{{ github_url }}">GitHub repository</a><a class="button secondary" href="/contact">Contact</a></div></div>
+{% endblock %}

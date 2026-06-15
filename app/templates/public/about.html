@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="hero hero-home">
+  <div class="logo-mark big"><span>N</span></div>
+  <div>
+    <h3>What NetSentry Is</h3>
+    <p>NetSentry is a practical cybersecurity gateway project built to turn a Debian machine into a controlled Wi-Fi gateway, DNS filtering point, firewall, router, IDS visibility point, log collector, and web monitoring interface.</p>
+  </div>
+</div>
+
+<div class="two-col">
+  <div class="card"><h3>Motivation</h3><p>The goal is to build a real defensive network appliance, not only run isolated tools. NetSentry connects access control, packet flow, DNS filtering, firewall policy, IDS alerts, and logs into one explainable system.</p></div>
+  <div class="card"><h3>What We Want to Achieve</h3><p>The project aims to prove that a low-cost Debian server can become a monitored gateway for client devices, with a clean admin interface and a clear security boundary between public pages and protected operator data.</p></div>
+</div>
+
+<div class="card"><h3>Current Direction</h3><p>V1 focuses on visibility: public project pages, admin status, clients, DNS, firewall, IDS, logs, and network views. Later versions can add controlled response through a privileged agent, not direct Flask root commands.</p></div>
+
+<div class="card"><h3>Project Links</h3><div class="button-row"><a class="button" href="{{ github_url }}">GitHub repository</a><a class="button secondary" href="/contact">Contact</a></div><p class="muted">Owner: {{ project_owner }}</p></div>
+{% endblock %}

@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="grid">
+  <div class="metric"><span>IPv4 forwarding</span><strong class="{% if firewall.ip_forwarding.enabled %}ok{% else %}bad{% endif %}">{{ firewall.ip_forwarding.state }}</strong></div>
+  <div class="metric"><span>Final INPUT drop</span><strong class="{% if firewall.input_final_drop %}ok{% else %}bad{% endif %}">{% if firewall.input_final_drop %}present{% else %}missing{% endif %}</strong></div>
+  <div class="metric"><span>NAT masquerade</span><strong class="{% if firewall.nat.masquerade %}ok{% else %}bad{% endif %}">{% if firewall.nat.masquerade %}enabled{% else %}missing{% endif %}</strong></div>
+  <div class="metric"><span>LAN NAT exception</span><strong class="{% if firewall.nat.lan_exception %}ok{% else %}bad{% endif %}">{% if firewall.nat.lan_exception %}present{% else %}missing{% endif %}</strong></div>
+</div>
+<div class="card"><h3>Firewall Search</h3><form class="filters" method="get"><input name="q" value="{{ firewall.query }}" placeholder="port, IP, ACCEPT, DROP"><button>Filter Raw Rules</button><a class="button" href="/admin/firewall">Clear</a></form></div>
+<div class="card"><h3>Policy Summary</h3><div class="status-list">{% for item in firewall.policy %}<div class="status-row"><div><strong>{{ item.name }}</strong><br><span class="muted">{{ item.description }}</span></div><div></div><div><span class="pill {% if item.ok %}ok{% else %}bad{% endif %}">{% if item.ok %}OK{% else %}Check{% endif %}</span></div></div>{% endfor %}</div></div>
+<div class="card"><h3>Human-readable Access Matrix</h3><table><tr><th>Category</th><th>Source</th><th>Ports</th><th>Purpose</th><th>Status</th></tr>{% for r in firewall.access_matrix %}<tr><td>{{ r.category }}</td><td>{{ r.source }}</td><td>{{ r.ports }}</td><td>{{ r.purpose }}</td><td><span class="pill {% if r.ok %}ok{% else %}bad{% endif %}">{% if r.ok %}OK{% else %}Check{% endif %}</span></td></tr>{% endfor %}</table></div>
+<div class="card"><h3>Raw Rules</h3><details open><summary>INPUT</summary><pre>{{ firewall.filtered_raw.input or firewall.raw.input.stderr }}</pre></details><details><summary>FORWARD</summary><pre>{{ firewall.filtered_raw.forward or firewall.raw.forward.stderr }}</pre></details><details><summary>NAT</summary><pre>{{ firewall.filtered_raw.nat or firewall.raw.nat.stderr }}</pre></details></div>
+{% endblock %}
