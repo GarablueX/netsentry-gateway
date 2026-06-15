@@ -1,0 +1,14 @@
+[Unit]
+Description=NetSentry firewall rules at boot
+Wants=network-online.target
+After=network-online.target netsentry-ap-interface.service
+Before=hostapd.service dnsmasq.service nginx.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/gbx/netsentry-gateway
+ExecStart=/bin/bash /home/gbx/netsentry-gateway/scripts/apply_firewall.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

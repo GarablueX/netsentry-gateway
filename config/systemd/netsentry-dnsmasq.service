@@ -1,0 +1,16 @@
+[Unit]
+Description=NetSentry DHCP service for AP clients
+Wants=network-online.target
+After=network-online.target netsentry-ap-interface.service
+Before=hostapd.service
+
+[Service]
+Type=simple
+ExecStart=/usr/sbin/dnsmasq --keep-in-foreground --conf-file=/home/gbx/netsentry-gateway/config/ap/dnsmasq-netsentry.conf --pid-file=/run/netsentry-dnsmasq.pid
+Restart=on-failure
+RestartSec=3
+
+
+[Install]
+WantedBy=multi-user.target
+
