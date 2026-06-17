@@ -61,3 +61,9 @@ config/ap/hostpad-netsentry.conf
 *.crt
 snort/rules/*.bak-*
 snort/rules/*.bak-*
+
+# Snort runtime output
+snort/alerts/*
+snort/pcaps/*
+snort/rules/*.bak*
+*.pcap
