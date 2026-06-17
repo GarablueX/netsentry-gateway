@@ -1,0 +1,18 @@
+[Unit]
+Description=NetSentry Snort AP IDS Sensor
+After=network-online.target netsentry-ap-interface.service hostapd.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+Environment=HOME=/home/gbx
+ExecStart=/bin/bash -lc 'sudo stdbuf -oL -eL snort -c /usr/local/etc/snort/snort.lua   -R ~/netsentry-gateway/snort/rules/local_ap.rules   -i wlx200db0220b9a   -A alert_fast | stdbuf -oL tee -a ~/netsentry-gateway/snort/alerts/alert_fast.txt'
+
+Restart=always
+RestartSec=3
+KillMode=control-group
+TimeoutStopSec=10
+SendSIGKILL=yes
+
+[Install]
+WantedBy=multi-user.target
