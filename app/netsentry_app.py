@@ -63,7 +63,11 @@ GITHUB_URL = os.getenv("NETSENTRY_GITHUB_URL", "https://github.com/GarablueX/net
 CONTACT_EMAIL = os.getenv("NETSENTRY_CONTACT_EMAIL", "Add contact email in /etc/netsentry/netsentry-web.env")
 CONTACT_NOTE = os.getenv("NETSENTRY_CONTACT_NOTE", "For lab/project questions, use the GitHub repository or the configured contact address.")
 
-ALERTS_JSONL = BASE_DIR / "snort/alerts/alerts.jsonl"
+IDS_ALERTS_JSONL = BASE_DIR / "data/ids/alerts.jsonl"
+IDS_ALERTS_LATEST_JSON = BASE_DIR / "data/ids/alerts_latest.json"
+IDS_LATEST_REV3_JSON = BASE_DIR / "data/ids/latest_rev3.json"
+
+ALERTS_JSONL = IDS_ALERTS_JSONL
 ALERT_FAST = BASE_DIR / "snort/alerts/alert_fast.txt"
 
 HONEYPOT_LOG = BASE_DIR / "logs/honeypot_lite_attempts.jsonl"
@@ -380,9 +384,12 @@ def get_full_status_data():
                 "nginx": service_active("nginx"),
                 "AdGuardHome": service_active("AdGuardHome"),
                 "netsentry_ap_interface": service_active("netsentry-ap-interface"),
+                "netsentry_snort_ap": service_active("netsentry-snort-ap"),
+                "netsentry_snort_watcher": service_active("netsentry-snort-watcher"),
                 "hostapd_process": process_running("hostapd"),
                 "dnsmasq_process": process_running("dnsmasq"),
                 "snort_process": process_running("snort"),
+                "snort_watcher_process": process_running("snort_alert_watcher.py"),
             },
         }
     )
@@ -639,12 +646,70 @@ def get_firewall_data():
     }
 
 
+
+def read_json_file(path, default=None):
+    if default is None:
+        default = {}
+    if not path.exists():
+        return default
+    try:
+        return json.loads(path.read_text(errors="ignore"))
+    except Exception:
+        return default
+
+
+def alert_rev_info(value):
+    try:
+        rev = int(value)
+    except Exception:
+        rev = 0
+
+    if rev >= 3:
+        return rev, "high", "rev-high"
+    if rev == 2:
+        return rev, "medium", "rev-medium"
+    if rev == 1:
+        return rev, "low", "rev-low"
+    return rev, "unknown", "rev-unknown"
+
+
 def normalize_alert(alert):
     if "raw" in alert and len(alert) == 1:
-        return {"time": "", "sid": "", "message": alert["raw"], "src": "", "src_port": "", "dst": "", "dst_port": "", "proto": "", "priority": "", "raw": alert["raw"]}
+        return {
+            "time": "",
+            "snort_time": "",
+            "gid": "",
+            "sid": "",
+            "rev": "",
+            "rev_int": 0,
+            "severity": "unknown",
+            "severity_class": "rev-unknown",
+            "message": alert["raw"],
+            "src": "",
+            "src_port": "",
+            "dst": "",
+            "dst_port": "",
+            "proto": "",
+            "priority": "",
+            "pcap_file": "",
+            "pcap_name": "",
+            "raw": alert["raw"],
+        }
+
+    rev, severity, severity_class = alert_rev_info(alert.get("rev"))
+
+    pcap_file = alert.get("pcap_file") or alert.get("pcap") or ""
+    pcap_name = Path(str(pcap_file)).name if pcap_file else ""
+
     return {
-        "time": alert.get("timestamp") or alert.get("received_at") or alert.get("time") or "",
+        "time": alert.get("timestamp") or alert.get("seen_at") or alert.get("received_at") or alert.get("time") or "",
+        "snort_time": alert.get("snort_time") or alert.get("raw_time") or "",
+        "gid": str(alert.get("gid") or "1"),
         "sid": str(alert.get("sid") or alert.get("gid_sid") or ""),
+        "rev": str(rev) if rev else "",
+        "rev_int": rev,
+        "severity": alert.get("severity") or severity,
+        "severity_class": severity_class,
         "message": alert.get("message") or alert.get("msg") or alert.get("alert") or "",
         "src": alert.get("src") or alert.get("src_ip") or alert.get("source") or "",
         "src_port": str(alert.get("src_port") or alert.get("sport") or ""),
@@ -652,8 +717,11 @@ def normalize_alert(alert):
         "dst_port": str(alert.get("dst_port") or alert.get("dport") or ""),
         "proto": str(alert.get("proto") or alert.get("protocol") or ""),
         "priority": str(alert.get("priority") or alert.get("prio") or ""),
+        "pcap_file": str(pcap_file),
+        "pcap_name": pcap_name,
         "raw": alert.get("raw") or json.dumps(alert, ensure_ascii=False),
     }
+
 
 
 def parse_limit(default=1000, maximum=20000):
@@ -667,16 +735,32 @@ def parse_limit(default=1000, maximum=20000):
     return max(1, min(value, maximum))
 
 
+
 def get_alerts_data(limit=None):
     if limit is None:
         limit = parse_limit(default=1000)
-    alerts = [normalize_alert(a) for a in read_jsonl(ALERTS_JSONL, limit=limit)]
+
+    latest_data = read_json_file(IDS_ALERTS_LATEST_JSON, default=[])
+    use_latest = isinstance(latest_data, list) and latest_data and limit is not None and limit <= 1000
+
+    if use_latest:
+        raw_alerts = latest_data[-limit:]
+        source = str(IDS_ALERTS_LATEST_JSON)
+    else:
+        raw_alerts = read_jsonl(IDS_ALERTS_JSONL, limit=limit)
+        source = str(IDS_ALERTS_JSONL)
+
+    alerts = [normalize_alert(a) for a in raw_alerts]
+
     src = request.args.get("src", "").strip()
     dst = request.args.get("dst", "").strip()
     sid = request.args.get("sid", "").strip()
     proto = request.args.get("proto", "").strip()
+    rev = request.args.get("rev", "").strip()
     q = request.args.get("q", "").strip()
+
     filtered = alerts
+
     if src:
         filtered = [a for a in filtered if contains_ci(a["src"], src)]
     if dst:
@@ -685,23 +769,50 @@ def get_alerts_data(limit=None):
         filtered = [a for a in filtered if contains_ci(a["sid"], sid)]
     if proto:
         filtered = [a for a in filtered if contains_ci(a["proto"], proto)]
+    if rev:
+        filtered = [a for a in filtered if str(a["rev_int"]) == rev]
     if q:
         filtered = [a for a in filtered if any(contains_ci(v, q) for v in a.values())]
+
+    latest_rev3_raw = read_json_file(IDS_LATEST_REV3_JSON, default={})
+    latest_rev3 = normalize_alert(latest_rev3_raw) if isinstance(latest_rev3_raw, dict) and latest_rev3_raw else None
+
+    if latest_rev3 is None:
+        for item in reversed(alerts):
+            if item.get("rev_int", 0) >= 3:
+                latest_rev3 = item
+                break
+
     stats = {
         "by_sid": Counter(a["sid"] or "unknown" for a in alerts).most_common(10),
         "by_source": Counter(a["src"] or "unknown" for a in alerts).most_common(10),
         "by_proto": Counter(a["proto"] or "unknown" for a in alerts).most_common(10),
+        "by_rev": Counter(str(a["rev_int"] or "unknown") for a in alerts).most_common(10),
     }
+
+    counts = {
+        "rev1": sum(1 for a in alerts if a.get("rev_int") == 1),
+        "rev2": sum(1 for a in alerts if a.get("rev_int") == 2),
+        "rev3": sum(1 for a in alerts if a.get("rev_int", 0) >= 3),
+    }
+
     return {
-        "source": str(ALERTS_JSONL),
+        "source": source,
+        "jsonl_source": str(IDS_ALERTS_JSONL),
+        "latest_source": str(IDS_ALERTS_LATEST_JSON),
+        "latest_rev3_source": str(IDS_LATEST_REV3_JSON),
         "fast_source": str(ALERT_FAST),
         "alerts": filtered,
+        "latest_rev3": latest_rev3,
         "total": len(alerts),
         "filtered_total": len(filtered),
+        "counts": counts,
         "stats": stats,
         "limit": "all" if limit is None else limit,
-        "filters": {"src": src, "dst": dst, "sid": sid, "proto": proto, "q": q},
+        "filters": {"src": src, "dst": dst, "sid": sid, "proto": proto, "rev": rev, "q": q},
     }
+
+
 
 
 def backup_and_clear_alerts():
@@ -709,13 +820,24 @@ def backup_and_clear_alerts():
     archive.mkdir(parents=True, exist_ok=True)
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     backups = []
-    for path in [ALERTS_JSONL, ALERT_FAST]:
+
+    files_to_clear = [
+        (IDS_ALERTS_JSONL, ""),
+        (IDS_ALERTS_LATEST_JSON, "[]"),
+        (IDS_LATEST_REV3_JSON, "{}"),
+        (ALERT_FAST, ""),
+    ]
+
+    for path, empty_value in files_to_clear:
         if path.exists():
             backup = archive / f"{path.name}.{stamp}.bak"
             shutil.copy2(path, backup)
-            path.write_text("")
+            path.write_text(empty_value)
             backups.append(str(backup))
+
     return backups
+
+
 
 def summarize_log_entry(source, entry):
     if isinstance(entry, dict):

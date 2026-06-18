@@ -1,16 +1,178 @@
 {% extends "base.html" %}
 {% block content %}
+
 <div class="grid">
   <div class="metric"><span>Total loaded alerts</span><strong>{{ data.total }}</strong></div>
   <div class="metric"><span>Filtered</span><strong>{{ data.filtered_total }}</strong></div>
-  <div class="metric"><span>Load limit</span><strong>{{ data.limit }}</strong></div>
+  <div class="metric"><span>Rev 1 / Low</span><strong class="ok">{{ data.counts.rev1 }}</strong></div>
+  <div class="metric"><span>Rev 2 / Medium</span><strong class="warn">{{ data.counts.rev2 }}</strong></div>
+  <div class="metric"><span>Rev 3 / High</span><strong class="bad">{{ data.counts.rev3 }}</strong></div>
 </div>
-{% if clear_message %}<div class="note">{{ clear_message }}</div>{% endif %}
-<div class="card"><h3>IDS Filters & Actions</h3><form class="filters" method="get"><input name="src" value="{{ data.filters.src }}" placeholder="Source IP"><input name="dst" value="{{ data.filters.dst }}" placeholder="Destination IP"><input name="sid" value="{{ data.filters.sid }}" placeholder="SID"><input name="proto" value="{{ data.filters.proto }}" placeholder="Protocol"><input name="q" value="{{ data.filters.q }}" placeholder="Keyword"><select name="limit"><option value="1000" {% if data.limit == 1000 %}selected{% endif %}>Last 1000</option><option value="5000" {% if data.limit == 5000 %}selected{% endif %}>Last 5000</option><option value="all" {% if data.limit == 'all' %}selected{% endif %}>All alerts</option></select><button>Filter</button><a class="button secondary" href="/admin/ids">Clear filters</a></form>
-<form method="post" action="/admin/ids/clear" onsubmit="return confirm('This will backup and clear Snort alert files. Continue?');"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="button danger" type="submit">Backup & clear alert files</button></form><p class="muted">Clear action creates backups under <code>snort/alerts/archive/</code> before truncating alert files.</p></div>
-<div class="two-col"><div class="card"><h3>Top Source IPs</h3><table><tr><th>Source</th><th>Count</th></tr>{% for k,v in data.stats.by_source %}<tr><td>{{ k }}</td><td>{{ v }}</td></tr>{% endfor %}</table></div><div class="card"><h3>Top SIDs</h3><table><tr><th>SID</th><th>Count</th></tr>{% for k,v in data.stats.by_sid %}<tr><td>{{ k }}</td><td>{{ v }}</td></tr>{% endfor %}</table></div></div>
-<div class="card"><h3>Snort Alerts</h3><p class="muted">Source: <code>{{ data.source }}</code></p><table><tr><th>Time</th><th>SID</th><th>Priority</th><th>Proto</th><th>Source</th><th>Destination</th><th>Message</th></tr>
-{% for a in data.alerts|reverse %}<tr><td>{{ a.time }}</td><td>{{ a.sid }}</td><td>{{ a.priority }}</td><td><span class="pill">{{ a.proto }}</span></td><td>{{ a.src }}{% if a.src_port %}:{{ a.src_port }}{% endif %}</td><td>{{ a.dst }}{% if a.dst_port %}:{{ a.dst_port }}{% endif %}</td><td>{{ a.message }}</td></tr>{% endfor %}
-{% if not data.alerts %}<tr><td colspan="7">No alerts found.</td></tr>{% endif %}
-</table></div>
+
+{% if clear_message %}
+<div class="note">{{ clear_message }}</div>
+{% endif %}
+
+<div class="card latest-critical">
+  <h3>Latest Rev 3 Detection</h3>
+  {% if data.latest_rev3 %}
+    <div class="ids-latest-row">
+      <span class="rev-pill rev-high">REV {{ data.latest_rev3.rev }}</span>
+      <strong>{{ data.latest_rev3.message }}</strong>
+    </div>
+    <p class="muted">
+      {{ data.latest_rev3.time }}
+      · SID {{ data.latest_rev3.sid }}
+      · {{ data.latest_rev3.proto }}
+      · {{ data.latest_rev3.src }}{% if data.latest_rev3.src_port %}:{{ data.latest_rev3.src_port }}{% endif %}
+      →
+      {{ data.latest_rev3.dst }}{% if data.latest_rev3.dst_port %}:{{ data.latest_rev3.dst_port }}{% endif %}
+    </p>
+    {% if data.latest_rev3.pcap_name %}
+      <p class="muted">Evidence PCAP: <code>{{ data.latest_rev3.pcap_name }}</code></p>
+    {% endif %}
+  {% else %}
+    <p class="muted">No Rev 3 alert detected yet.</p>
+  {% endif %}
+</div>
+
+<div class="card">
+  <h3>IDS Filters & Actions</h3>
+
+  <form class="filters" method="get">
+    <input name="src" value="{{ data.filters.src }}" placeholder="Source IP">
+    <input name="dst" value="{{ data.filters.dst }}" placeholder="Destination IP">
+    <input name="sid" value="{{ data.filters.sid }}" placeholder="SID">
+
+    <select name="rev">
+      <option value="" {% if not data.filters.rev %}selected{% endif %}>All revs</option>
+      <option value="1" {% if data.filters.rev == '1' %}selected{% endif %}>Rev 1 / Low</option>
+      <option value="2" {% if data.filters.rev == '2' %}selected{% endif %}>Rev 2 / Medium</option>
+      <option value="3" {% if data.filters.rev == '3' %}selected{% endif %}>Rev 3 / High</option>
+    </select>
+
+    <input name="proto" value="{{ data.filters.proto }}" placeholder="Protocol">
+    <input name="q" value="{{ data.filters.q }}" placeholder="Keyword">
+
+    <select name="limit">
+      <option value="1000" {% if data.limit == 1000 %}selected{% endif %}>Last 1000</option>
+      <option value="5000" {% if data.limit == 5000 %}selected{% endif %}>Last 5000</option>
+      <option value="all" {% if data.limit == 'all' %}selected{% endif %}>All alerts</option>
+    </select>
+
+    <button>Filter</button>
+    <a class="button secondary" href="/admin/ids">Clear filters</a>
+    <a class="button secondary" href="/admin/ids">Refresh</a>
+  </form>
+
+  <form method="post" action="/admin/ids/clear" onsubmit="return confirm('This will backup and clear IDS alert files. Continue?');">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <button class="button danger" type="submit">Backup & clear alert files</button>
+  </form>
+
+  <p class="muted">
+    Structured source: <code>{{ data.source }}</code><br>
+    Raw Snort source: <code>{{ data.fast_source }}</code>
+  </p>
+</div>
+
+<div class="two-col">
+  <div class="card">
+    <h3>Top Source IPs</h3>
+    <table>
+      <tr><th>Source</th><th>Count</th></tr>
+      {% for k,v in data.stats.by_source %}
+      <tr><td>{{ k }}</td><td>{{ v }}</td></tr>
+      {% endfor %}
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>Top SIDs</h3>
+    <table>
+      <tr><th>SID</th><th>Count</th></tr>
+      {% for k,v in data.stats.by_sid %}
+      <tr><td>{{ k }}</td><td>{{ v }}</td></tr>
+      {% endfor %}
+    </table>
+  </div>
+</div>
+
+<div class="two-col">
+  <div class="card">
+    <h3>By Revision</h3>
+    <table>
+      <tr><th>Rev</th><th>Count</th></tr>
+      {% for k,v in data.stats.by_rev %}
+      <tr>
+        <td>
+          {% if k == '1' %}<span class="rev-pill rev-low">REV 1</span>
+          {% elif k == '2' %}<span class="rev-pill rev-medium">REV 2</span>
+          {% elif k == '3' %}<span class="rev-pill rev-high">REV 3</span>
+          {% else %}<span class="rev-pill rev-unknown">{{ k }}</span>
+          {% endif %}
+        </td>
+        <td>{{ v }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>By Protocol</h3>
+    <table>
+      <tr><th>Protocol</th><th>Count</th></tr>
+      {% for k,v in data.stats.by_proto %}
+      <tr><td>{{ k }}</td><td>{{ v }}</td></tr>
+      {% endfor %}
+    </table>
+  </div>
+</div>
+
+<div class="card">
+  <h3>Snort Alerts</h3>
+
+  <table>
+    <tr>
+      <th>Time</th>
+      <th>Rev</th>
+      <th>SID</th>
+      <th>Priority</th>
+      <th>Proto</th>
+      <th>Source</th>
+      <th>Destination</th>
+      <th>Message</th>
+      <th>PCAP</th>
+    </tr>
+
+    {% for a in data.alerts|reverse %}
+    <tr class="alert-row {{ a.severity_class }}">
+      <td>{{ a.time }}</td>
+      <td>
+        {% if a.rev_int >= 3 %}
+          <span class="rev-pill rev-high">REV {{ a.rev }}</span>
+        {% elif a.rev_int == 2 %}
+          <span class="rev-pill rev-medium">REV {{ a.rev }}</span>
+        {% elif a.rev_int == 1 %}
+          <span class="rev-pill rev-low">REV {{ a.rev }}</span>
+        {% else %}
+          <span class="rev-pill rev-unknown">N/A</span>
+        {% endif %}
+      </td>
+      <td>{{ a.sid }}</td>
+      <td>{{ a.priority }}</td>
+      <td><span class="pill">{{ a.proto }}</span></td>
+      <td>{{ a.src }}{% if a.src_port %}:{{ a.src_port }}{% endif %}</td>
+      <td>{{ a.dst }}{% if a.dst_port %}:{{ a.dst_port }}{% endif %}</td>
+      <td>{{ a.message }}</td>
+      <td>{% if a.pcap_name %}<code>{{ a.pcap_name }}</code>{% else %}<span class="muted">—</span>{% endif %}</td>
+    </tr>
+    {% endfor %}
+
+    {% if not data.alerts %}
+    <tr><td colspan="9">No alerts found.</td></tr>
+    {% endif %}
+  </table>
+</div>
+
 {% endblock %}

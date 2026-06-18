@@ -1,7 +1,7 @@
 alert icmp !$ADMIN_IP any  -> $NETSENTRY_GATEWAY any (
 msg:" ICMP ping from non-admin";
 sid:10000001;
-rev:1;
+rev:3;
 )
 
 alert tcp !$ADMIN_IP any  -> $NETSENTRY_GATEWAY 22 (

@@ -67,3 +67,8 @@ snort/alerts/*
 snort/pcaps/*
 snort/rules/*.bak*
 *.pcap
+
+# NetSentry runtime IDS data
+data/ids/*.json
+data/ids/*.jsonl
+data/ids/rev3_flags/*
