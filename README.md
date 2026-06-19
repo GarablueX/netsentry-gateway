@@ -1,15 +1,21 @@
 # NetSentry Gateway v1.8
 
-> Personal homelab security gateway built on Debian.
-> AP + DHCP + DNS filtering + firewall/NAT + HTTPS dashboard + Snort IDS + structured alert watcher.
+<p align="center">
+  <img src="Pics/Logo.png" alt="NetSentry Logo" width="200">
+</p>
+
+<p align="center">
+  <b>Debian-based homelab security gateway</b><br>
+  AP + DHCP + DNS filtering + firewall/NAT + HTTPS dashboard + Snort IDS + structured alert watcher
+</p>
 
 ---
 
 ## Current Status
 
-**NetSentry v1.8 is the current stable homelab gateway state of this project.**
+**NetSentry v1.8** is the current stable homelab gateway state of this project.
 
-This repository contains the current working stack plus older files kept as a chronological build log. Some scripts, old service names, old IP references, and previous dashboard versions are intentionally preserved to show how the project evolved.
+This repository contains the current working gateway stack plus older files kept as a chronological build log. Some scripts, old service names, old IP references, and previous dashboard versions are intentionally preserved to show how the project evolved.
 
 The current active stack is documented in:
 
@@ -17,7 +23,7 @@ The current active stack is documented in:
 docs/netsentry-ids-dashboard-progress.md
 ```
 
-Historical files should not be interpreted as active services unless they are referenced by the current systemd services, firewall script, or master documentation.
+Historical files should not be interpreted as active services unless they are referenced by the current systemd services, current firewall script, current Flask dashboard, current Snort rules, or master documentation.
 
 ---
 
@@ -39,15 +45,262 @@ Main capabilities:
 * Provides DHCP to AP clients
 * Provides DNS filtering through AdGuardHome
 * Routes AP client traffic through Debian
-* Applies firewall and NAT rules with iptables
-* Exposes a secure HTTPS dashboard through Nginx
+* Applies firewall and NAT policy with iptables
+* Exposes a HTTPS dashboard through Nginx
 * Runs Flask as the internal dashboard backend
 * Runs Snort as an AP-side IDS sensor
 * Parses Snort alerts into structured JSON
 * Displays IDS alerts in the dashboard
-* Uses Snort `rev` values as a project severity convention
-* Tracks latest Rev 3/high-severity detections
+* Tracks Rev 3/high-severity detections
 * Monitors important systemd services from the dashboard
+* Supports remote administration through Tailscale
+
+---
+
+## Screenshots and Evidence
+
+### 1. NetSentry Gateway Architecture
+
+![NetSentry Gateway Architecture](Pics/Architecture.png)
+
+This diagram shows the current NetSentry gateway layout:
+
+* AP/client LAN: `10.10.10.0/24`
+* NetSentry AP gateway: `10.10.10.1`
+* HOME/ISP LAN: `192.168.1.0/24`
+* NetSentry HOME-side IP: `192.168.1.19`
+* Admin laptop: `192.168.1.11`
+* Debian gateway handling DHCP, DNS filtering, firewall/NAT, monitoring, and IDS visibility
+
+---
+
+### 2. Network Topology
+
+![NetSentry Network Topology](Pics/1.png)
+
+This diagram shows the physical and logical path between:
+
+* ISP router
+* NetSentry gateway
+* AP-side clients
+* Admin PC
+* Internet path
+* HOME/WAN side
+* AP/client side
+
+---
+
+### 3. NAT Decision Flow
+
+![NAT Decision Flow](Pics/2.png)
+
+This flow explains the NAT behavior:
+
+* AP to HOME LAN traffic keeps the original `10.10.10.x` source
+* AP to Internet traffic is masqueraded through `enp3s0`
+* Traffic that does not match either case falls through with no NAT action
+
+---
+
+### 4. Return Path and Forwarding Flow
+
+![Return Path and Forwarding Flow](Pics/3.png)
+
+This sequence diagram shows:
+
+* HOME LAN to AP LAN return routing
+* ISP router static route behavior
+* NetSentry forwarding through the AP interface
+* AP client outbound traffic to the Internet
+* NAT/MASQUERADE behavior for Internet-bound traffic
+
+---
+
+### 5. Public Landing Page
+
+![NetSentry Home Page](Pics/home.png)
+
+The public landing page presents NetSentry as a secure Debian gateway and gives access to project information, architecture, status, and documentation.
+
+---
+
+### 6. Admin Dashboard
+
+![NetSentry Admin Dashboard](<Pics/admin dashboard.png>)
+
+The admin dashboard shows live gateway state:
+
+* Internet status
+* Uptime
+* Client count
+* IDS alert count
+* DNS blocked count
+* DNS block rate
+* IPv4 forwarding status
+* Firewall NAT status
+* Service state
+* Interface state
+
+Visible active services include:
+
+```text
+nginx
+AdGuardHome
+netsentry_ap_interface
+netsentry_snort_ap
+netsentry_snort_watcher
+hostapd_process
+dnsmasq_process
+snort_process
+snort_watcher_process
+```
+
+---
+
+### 7. Firewall Dashboard
+
+![NetSentry Firewall Dashboard](Pics/FIREWALL.png)
+
+The firewall dashboard provides a human-readable view of the active firewall policy.
+
+It verifies:
+
+* IPv4 forwarding
+* Final INPUT drop
+* NAT masquerade
+* LAN NAT exception
+* Established traffic handling
+* Invalid packet dropping
+* Loopback acceptance
+* AP forwarding
+* Return forwarding
+
+---
+
+### 8. IDS Dashboard
+
+![NetSentry IDS Dashboard](Pics/IDS.png)
+
+The IDS dashboard shows Snort alert visibility with filters and severity counters.
+
+Current IDS dashboard features:
+
+* Total loaded alerts
+* Filtered alerts
+* Rev 1 / low severity count
+* Rev 2 / medium severity count
+* Rev 3 / high severity count
+* Latest Rev 3 detection panel
+* Source IP filter
+* Destination IP filter
+* SID filter
+* Rev filter
+* Protocol filter
+* Keyword filter
+* Top source IPs
+* Top SIDs
+* Structured alert source display
+* Raw Snort source display
+
+---
+
+### 9. DNS Dashboard
+
+![NetSentry DNS Dashboard](Pics/DNS.png)
+
+The DNS dashboard shows AdGuardHome integration.
+
+It displays:
+
+* API connection status
+* Total DNS queries
+* Blocked DNS queries
+* DNS block percentage
+* Top blocked domains
+* Top clients
+* Top queried domains
+
+---
+
+### 10. DHCP Client Visibility
+
+![NetSentry DHCP Clients](<Pics/CLEINTS .png>)
+
+The Clients page shows DHCP lease visibility for devices connected through the NetSentry AP/client network.
+
+It displays:
+
+* Client IP
+* MAC address
+* Hostname
+* Lease expiry time
+
+Sensitive MAC addresses and user-specific values should be redacted before public sharing.
+
+---
+
+### 11. Network Dashboard
+
+![NetSentry Network Dashboard](Pics/network.png)
+
+The Network page shows Linux networking state:
+
+* Hostname
+* Load
+* Memory usage
+* Disk usage
+* Interfaces
+* Interface roles
+* Interface state
+* MAC addresses
+* IPv4 addresses
+* Routes
+* Listening ports
+
+It also confirms the presence of the Tailscale interface used for remote administration.
+
+---
+
+### 12. Client Connectivity Test
+
+![Client Connected and Gateway Ping Test](<Pics/Client connected ( piging both gateways , Another client ,Admin).png>)
+
+This test screenshot shows a Windows client connected to the NetSentry Wi-Fi AP and successfully pinging important network points.
+
+It demonstrates:
+
+* AP availability
+* Client association
+* Reachability to NetSentry AP gateway
+* Reachability to NetSentry HOME-side IP
+* Reachability to admin/HOME-side network
+* Dual-gateway routing behavior
+
+---
+
+### 13. AP Availability
+
+![AP Available](<Pics/AP AVAILABLE .png>)
+
+This screenshot shows the NetSentry AP being visible from a client device.
+
+---
+
+### 14. DHCP Lease Evidence
+
+![DHCP Lease to Client](<Pics/DHCP Lease to Client .png>)
+
+This screenshot shows DHCP lease assignment from NetSentry to an AP client.
+
+---
+
+### 15. ISP Router Static Route
+
+![Static Route to NetSentry Clients](<Pics/Static Route to Netsentry clients using ISP's Router Management UI.png>)
+
+This screenshot shows the ISP router static route used to return traffic to the NetSentry AP/client subnet.
+
+The static route allows HOME LAN devices to reach `10.10.10.0/24` through NetSentry.
 
 ---
 
@@ -142,6 +395,7 @@ DHCP range:       10.10.10.50 - 10.10.10.150
 | Flask               | Dashboard backend                         |
 | Snort               | AP-side IDS sensor                        |
 | Snort alert watcher | Converts Snort alerts into dashboard JSON |
+| Tailscale           | Remote private administration             |
 | systemd             | Boot automation for gateway services      |
 
 ---
@@ -159,6 +413,7 @@ netsentry-firewall.service
 netsentry-dnsmasq.service
 hostapd.service
 AdGuardHome.service
+tailscaled.service
 netsentry-snort-ap.service
 netsentry-snort-watcher.service
 ```
@@ -168,7 +423,7 @@ Legacy/deprecated service names may still appear in older documentation or scrip
 Service check command:
 
 ```bash
-for s in ssh nginx netsentry-web netsentry-ap-interface hostapd AdGuardHome netsentry-firewall netsentry-dnsmasq netsentry-snort-ap netsentry-snort-watcher; do
+for s in ssh nginx netsentry-web netsentry-ap-interface hostapd AdGuardHome tailscaled netsentry-firewall netsentry-dnsmasq netsentry-snort-ap netsentry-snort-watcher; do
   printf "%-32s enabled=%-12s active=%s\n" \
   "$s" \
   "$(systemctl is-enabled "$s" 2>/dev/null || echo not-found)" \
@@ -196,6 +451,21 @@ docs/
   NETSENTRY_MASTER_DOCUMENTATION.md
                                 Main project documentation
 
+Pics/
+  Logo.png
+  Architecture.png
+  1.png
+  2.png
+  3.png
+  home.png
+  admin dashboard.png
+  FIREWALL.png
+  IDS.png
+  DNS.png
+  CLEINTS .png
+  network.png
+  Client connected ( piging both gateways , Another client ,Admin).png
+
 scripts/
   apply_firewall.sh             Active firewall/NAT script
   snort_alert_watcher.py        Snort alert parser/watcher
@@ -215,6 +485,7 @@ data/
 
 The dashboard includes:
 
+* Public project pages
 * System status
 * Service status
 * Client/DHCP visibility
@@ -371,6 +642,16 @@ AP client probing sensitive gateway ports
 SMB/RDP/Telnet-style access attempts
 ```
 
+Example DNS bypass rule:
+
+```snort
+alert udp $AP_LAN any -> !$NETSENTRY_GATEWAY 53 (
+    msg:"DNS BYPASSING FROM CLIENTS detected";
+    sid:100000112;
+    rev:3;
+)
+```
+
 ---
 
 ## HTTPS Limitation
@@ -489,7 +770,7 @@ PCAP files are runtime evidence and are not committed to Git.
 
 ---
 
-## Firewall Implementation Note
+## Firewall Implementation
 
 NetSentry currently uses **iptables-based firewall scripts** for the active gateway configuration.
 
@@ -506,6 +787,46 @@ Active firewall service:
 ```text
 netsentry-firewall.service
 ```
+
+Key NAT behavior:
+
+```bash
+# AP to HOME LAN: no NAT, keep real client IP visible
+iptables -t nat -A POSTROUTING -s "$AP_NET" -d "$HOME_LAN" -j RETURN
+
+# AP to Internet: NAT through HOME/WAN interface
+iptables -t nat -A POSTROUTING -s "$AP_NET" -o "$WAN_I" -j MASQUERADE
+```
+
+---
+
+## Tailscale Remote Administration
+
+NetSentry v1.8 supports remote private administration through Tailscale.
+
+Tailscale interface:
+
+```text
+tailscale0
+```
+
+Purpose:
+
+```text
+Remote SSH access
+Remote HTTPS dashboard access
+Private administration without exposing the dashboard directly to the public Internet
+```
+
+Tailscale is not currently used as:
+
+```text
+exit node
+subnet router
+public VPN gateway
+```
+
+The current design is intentionally limited to direct private access to the NetSentry machine.
 
 ---
 
@@ -525,7 +846,7 @@ test scripts
 proof-of-concept services
 ```
 
-These files are kept to show the project evolution.
+These files are kept to show project evolution.
 
 They are not part of the current active NetSentry v1.8 stack unless referenced by:
 
@@ -631,6 +952,9 @@ structured JSON output
 IDS dashboard Rev filters
 Latest Rev 3 display
 dashboard service visibility
+AdGuard DNS API integration
+iptables firewall dashboard
+Tailscale interface visibility
 ```
 
 ---
@@ -640,7 +964,7 @@ dashboard service visibility
 After reboot, verify:
 
 ```bash
-for s in ssh nginx netsentry-web netsentry-ap-interface hostapd AdGuardHome netsentry-firewall netsentry-dnsmasq netsentry-snort-ap netsentry-snort-watcher; do
+for s in ssh nginx netsentry-web netsentry-ap-interface hostapd AdGuardHome tailscaled netsentry-firewall netsentry-dnsmasq netsentry-snort-ap netsentry-snort-watcher; do
   printf "%-32s enabled=%-12s active=%s\n" \
   "$s" \
   "$(systemctl is-enabled "$s" 2>/dev/null || echo not-found)" \
@@ -662,6 +986,8 @@ Snort watcher service is active
 Snort alert appears after test traffic
 IDS dashboard updates
 latest Rev 3 card updates after Rev 3 alert
+Tailscale interface appears
+remote SSH through Tailscale works
 ```
 
 ---
@@ -676,9 +1002,8 @@ watch/restrict/ban/unblock clients
 safe firewall enforcement helper
 Nginx/Flask HTTPS attack watcher
 home-side Snort sensor on enp3s0
-final architecture diagram
+final architecture diagram polish
 final demo checklist
-Tailscale remote access
 ```
 
 ---
@@ -752,11 +1077,34 @@ Snort alert watcher
 structured IDS alerts
 Rev severity dashboard
 service visibility
+Tailscale remote administration
 ```
 
+The project is now in a strong v1.8 homelab release state.
+
+---
+
+## Public Repository Readiness
+
+Before making the repository public:
+
+```text
+README explains current vs historical files
+legacy hardcoded password strings are removed or clearly deprecated
+iptables/nftables mismatch is clarified
+no real credentials are committed
+no TLS private keys are committed
+no Wi-Fi passphrase is committed
+no runtime alerts or pcaps are committed
+master documentation is current
+reboot test passes
+screenshots are redacted where needed
+```
+
+---
 
 ## Final Note
 
 NetSentry v1.8 is a personal homelab security gateway project.
 
-It is not an enterprise-ready product and is not presented as one. Its value is in demonstrating practical implementation of Linux networking, AP mode, DHCP, DNS filtering, firewalling, IDS monitoring, service automation, and dashboard visibility in a real working environment.
+It is not an enterprise-ready product and is not presented as one. Its value is in demonstrating practical implementation of Linux networking, AP mode, DHCP, DNS filtering, firewalling, IDS monitoring, service automation, remote private administration, and dashboard visibility in a real working environment.
