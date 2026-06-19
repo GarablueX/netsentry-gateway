@@ -21,7 +21,7 @@ SERVER_IP = "192.168.1.19"
 PORTAL_PORT = 5500
 
 ADMIN_USER = "admin"
-ADMIN_PASSWORD = "saifzedess"
+ADMIN_PASSWORD = "PASSWORDHERE"
 
 # Change this later to any long random string.
 # Example: python3 -c 'import secrets; print(secrets.token_hex(32))'
