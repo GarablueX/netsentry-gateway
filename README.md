@@ -14,7 +14,7 @@ This repository contains the current working stack plus older files kept as a ch
 The current active stack is documented in:
 
 ```text
-docs/NETSENTRY_MASTER_DOCUMENTATION.md
+docs/netsentry-ids-dashboard-progress.md
 ```
 
 Historical files should not be interpreted as active services unless they are referenced by the current systemd services, firewall script, or master documentation.
