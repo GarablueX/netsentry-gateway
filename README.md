@@ -754,42 +754,6 @@ Rev severity dashboard
 service visibility
 ```
 
-The project is now in a strong v1.8 homelab release state.
-
----
-
-## Recommended Next Steps
-
-Recommended finalization order:
-
-1. Scrub or clearly deprecate legacy files that contain hardcoded credentials.
-2. Keep only one master documentation file.
-3. Commit the current stable IDS/dashboard state.
-4. Reboot and verify all services start automatically.
-5. Verify AP, DNS, internet, dashboard, Snort, and watcher.
-6. Add final screenshots/test evidence.
-7. Make the repository public only after secret scanning and cleanup.
-8. Stop feature-building unless a bug appears.
-
----
-
-## Public Repository Readiness
-
-Before making the repository public:
-
-```text
-README explains current vs historical files
-legacy hardcoded password strings are removed or clearly deprecated
-iptables/nftables mismatch is clarified
-no real credentials are committed
-no TLS private keys are committed
-no Wi-Fi passphrase is committed
-no runtime alerts or pcaps are committed
-master documentation is current
-reboot test passes
-```
-
----
 
 ## Final Note
 
