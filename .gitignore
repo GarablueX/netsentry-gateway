@@ -72,3 +72,18 @@ snort/rules/*.bak*
 data/ids/*.json
 data/ids/*.jsonl
 data/ids/rev3_flags/*
+
+
+
+
+
+
+
+# Suricata runtime logs
+suricata/logs/*
+!suricata/logs/.gitkeep
+*.eve.json
+eve.json
+fast.log
+stats.log
+suricata.log
