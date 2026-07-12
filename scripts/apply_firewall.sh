@@ -3,7 +3,7 @@ set -euo pipefail
 
 TAILSCALE_I="tailscale0"
 TAILSCALE_NET="100.64.0.0/10"
-ADMIN_IP="192.168.1.8"
+ADMIN_IP="192.168.1.6"
 HOME_LAN="192.168.1.0/24"
 AP_NET="10.10.10.0/24"
 WAN_I="enp3s0"
