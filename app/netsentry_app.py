@@ -116,8 +116,6 @@ ADMIN_ROUTES = [
     ("/admin/clients", "Clients"),
     ("/admin/dns", "DNS"),
     ("/admin/firewall", "Firewall"),
-    ("/admin/ids", "IDS"),
-    ("/admin/logs", "Logs"),
     ("/admin/network", "Network"),
 ]
 
@@ -384,12 +382,8 @@ def get_full_status_data():
                 "nginx": service_active("nginx"),
                 "AdGuardHome": service_active("AdGuardHome"),
                 "netsentry_ap_interface": service_active("netsentry-ap-interface"),
-                "netsentry_snort_ap": service_active("netsentry-snort-ap"),
-                "netsentry_snort_watcher": service_active("netsentry-snort-watcher"),
                 "hostapd_process": process_running("hostapd"),
                 "dnsmasq_process": process_running("dnsmasq"),
-                "snort_process": process_running("snort"),
-                "snort_watcher_process": process_running("snort_alert_watcher.py"),
             },
         }
     )
@@ -611,11 +605,7 @@ def get_firewall_data():
         {"category": "Nginx HTTPS", "source": f"{HOME_LAN} + {AP_LAN}", "ports": "TCP 443", "purpose": "HTTPS frontend", "ok": text_has(input_text, HOME_LAN, "tcp dpt:443") and text_has(input_text, AP_LAN, "tcp dpt:443")},
         {"category": "Legacy Portal", "source": f"{HOME_LAN} + {AP_LAN}", "ports": "TCP 5500", "purpose": "Old portal during migration", "ok": text_has(input_text, HOME_LAN, "tcp dpt:5500") and text_has(input_text, AP_LAN, "tcp dpt:5500")},
         {"category": "Legacy Status API", "source": f"{HOME_LAN} + {AP_LAN}", "ports": "TCP 5051", "purpose": "Old status service during migration", "ok": text_has(input_text, HOME_LAN, "tcp dpt:5051") and text_has(input_text, AP_LAN, "tcp dpt:5051")},
-        {"category": "Honeypot", "source": f"{HOME_LAN} + {AP_LAN}", "ports": "TCP 8082", "purpose": "Decoy service", "ok": text_has(input_text, HOME_LAN, "tcp dpt:8082") and text_has(input_text, AP_LAN, "tcp dpt:8082")},
-        {"category": "Legacy IDS Dashboard", "source": ADMIN_IP, "ports": "TCP 5050", "purpose": "Old dashboard admin-only", "ok": text_has(input_text, ADMIN_IP, "tcp dpt:5050")},
-        {"category": "AdGuard UI", "source": ADMIN_IP, "ports": "TCP 3001", "purpose": "AdGuard admin UI", "ok": text_has(input_text, ADMIN_IP, "tcp dpt:3001")},
-        {"category": "HTTP Test", "source": ADMIN_IP, "ports": "TCP 8081", "purpose": "Snort HTTP tests", "ok": text_has(input_text, ADMIN_IP, "tcp dpt:8081")},
-        {"category": "FTP", "source": ADMIN_IP, "ports": "TCP 21 + 40000:40100", "purpose": "Admin-only FTP", "ok": text_has(input_text, ADMIN_IP, "tcp dpt:21") and "tcp dpts:40000:40100" in input_text},
+        {"category": "Honeypot", "source": f"{HOME_LAN} + {AP_LAN}", "ports": "TCP 8082", "purpose": "Decoy service", "ok": text_has(input_text, HOME_LAN, "tcp dpt:8082") and text_has(input_text, AP_LAN, "tcp dpt:8082")},        {"category": "AdGuard UI", "source": ADMIN_IP, "ports": "TCP 3001", "purpose": "AdGuard admin UI", "ok": text_has(input_text, ADMIN_IP, "tcp dpt:3001")},        {"category": "FTP", "source": ADMIN_IP, "ports": "TCP 21 + 40000:40100", "purpose": "Admin-only FTP", "ok": text_has(input_text, ADMIN_IP, "tcp dpt:21") and "tcp dpts:40000:40100" in input_text},
     ]
     policy = [
         {"name": "Established traffic", "description": "Replies to established connections are accepted.", "ok": "RELATED,ESTABLISHED" in input_text},
@@ -1066,27 +1056,7 @@ def admin_firewall():
     return render_template("admin/firewall.html", title="Firewall", subtitle="Human-readable read-only firewall policy", firewall=get_firewall_data())
 
 
-@app.route("/admin/ids")
-@login_required
-def admin_ids():
-    return render_template("admin/ids.html", title="IDS", subtitle="Snort alert visibility with filters", data=get_alerts_data(limit=None), csrf_token=csrf_token(), clear_message=session.pop("ids_clear_message", ""))
 
-
-
-
-@app.route("/admin/ids/clear", methods=["POST"])
-@login_required
-def admin_ids_clear():
-    if not check_csrf():
-        abort(403)
-    backups = backup_and_clear_alerts()
-    session["ids_clear_message"] = "Alerts cleared. Backups: " + ", ".join(backups) if backups else "No alert files existed to clear."
-    return redirect(url_for("admin_ids"))
-
-@app.route("/admin/logs")
-@login_required
-def admin_logs():
-    return render_template("admin/logs.html", title="Logs", subtitle="Gateway log visibility and filtering", data=get_logs_data(limit=300))
 
 
 @app.route("/admin/network")
@@ -1129,41 +1099,12 @@ def api_network_routes():
     return jsonify(get_routes_data())
 
 
-@app.route("/api/ids/alerts")
-@login_required
-def api_ids_alerts():
-    return jsonify(get_alerts_data(limit=None))
-
 
 @app.route("/api/firewall/rules")
 @login_required
 def api_firewall_rules():
     return jsonify(get_firewall_data())
 
-
-@app.route("/api/logs")
-@login_required
-def api_logs():
-    return jsonify(get_logs_data(limit=300))
-
-
-# ============================================================
-# Error handlers
-# ============================================================
-
-@app.errorhandler(403)
-def forbidden(_error):
-    return render_template("error.html", title="Forbidden", subtitle="Access denied", code=403, message="You do not have access to this page."), 403
-
-
-@app.errorhandler(404)
-def not_found(_error):
-    return render_template("error.html", title="Not Found", subtitle="Route not found", code=404, message="The requested NetSentry route does not exist."), 404
-
-
-@app.errorhandler(500)
-def server_error(_error):
-    return render_template("error.html", title="Server Error", subtitle="Application error", code=500, message="The NetSentry web app hit an internal error. Check the Flask terminal or journal logs."), 500
 
 
 if __name__ == "__main__":

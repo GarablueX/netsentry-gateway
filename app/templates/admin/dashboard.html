@@ -1,10 +1,20 @@
 {% extends "base.html" %}
 {% block content %}
+
+<div class="card">
+  <h3>Security Investigation</h3>
+  <p class="muted">
+    IDS alerts, Suricata events, firewall logs, authentication logs, and security investigation are handled in Wazuh.
+  </p>
+  <a class="button" href="https://192.168.1.19:8443/" target="_blank" rel="noopener">
+    Open Wazuh Dashboard
+  </a>
+</div>
+
 <div class="grid">
   <div class="metric"><span>Internet</span><strong class="{% if status.internet_ok %}ok{% else %}bad{% endif %}">{{ status.internet }}</strong></div>
   <div class="metric"><span>Uptime</span><strong>{{ status.uptime }}</strong></div>
   <div class="metric"><span>Clients</span><strong>{{ clients.clients|length }}</strong></div>
-  <div class="metric"><span>IDS alerts</span><strong>{{ alerts.total }}</strong></div>
   <div class="metric"><span>DNS blocked</span><strong>{{ dns.blocked }}</strong></div>
   <div class="metric"><span>DNS block rate</span><strong>{{ dns.blocked_percent }}%</strong></div>
   <div class="metric"><span>IPv4 forwarding</span><strong class="{% if firewall.ip_forwarding.enabled %}ok{% else %}bad{% endif %}">{{ firewall.ip_forwarding.state }}</strong></div>

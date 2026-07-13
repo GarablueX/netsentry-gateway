@@ -1,8 +1,0 @@
-{% extends "base.html" %}
-{% block content %}
-<div class="grid">
-  {% for source,count in data.counts.items() %}<div class="metric"><span>{{ source }}</span><strong>{{ count }}</strong></div>{% endfor %}
-</div>
-<div class="card"><h3>Log Filters</h3><form class="filters" method="get"><select name="source"><option value="">All sources</option>{% for s in data.available_sources %}<option value="{{ s }}" {% if data.source_filter == s %}selected{% endif %}>{{ s }}</option>{% endfor %}</select><input name="q" value="{{ data.query }}" placeholder="Keyword, IP, username"><button>Filter</button><a class="button secondary" href="/admin/logs">Clear</a></form></div>
-<div class="card"><h3>Log Entries</h3><table><tr><th>Source</th><th>Time</th><th>IP</th><th>User</th><th>Password</th><th>Event</th><th>Raw</th></tr>{% for row in data.rows|reverse %}<tr><td>{{ row.source }}</td><td>{{ row.time }}</td><td>{{ row.src_ip }}</td><td class="blue">{{ row.username }}</td><td class="bad">{{ row.password }}</td><td>{{ row.event }}</td><td><details><summary>raw</summary><pre>{{ row.body }}</pre></details></td></tr>{% endfor %}{% if not data.rows %}<tr><td colspan="7">No logs found.</td></tr>{% endif %}</table></div>
-{% endblock %}
