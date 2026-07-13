@@ -1,0 +1,50 @@
+<!-- Local rules -->
+
+<!-- Modify it at your will. -->
+<!-- Copyright (C) 2015, Wazuh Inc. -->
+
+<!-- Example -->
+<group name="local,syslog,sshd,">
+
+  <!--
+  Dec 10 01:02:02 host sshd[1234]: Failed none for root from 1.1.1.1 port 1066 ssh2
+  -->
+  <rule id="100001" level="5">
+    <if_sid>5716</if_sid>
+    <srcip>1.1.1.1</srcip>
+    <description>sshd: authentication failed from IP 1.1.1.1.</description>
+    <group>authentication_failed,pci_dss_10.2.4,pci_dss_10.2.5,</group>
+  </rule>
+
+</group>
+
+<!-- NETSENTRY_CUSTOM_RULES_START -->
+
+<group name="netsentry,suricata,ids,">
+  <rule id="110001" level="8">
+    <decoded_as>json</decoded_as>
+    <field name="event_type">alert</field>
+    <description>NetSentry Suricata alert detected</description>
+  </rule>
+</group>
+
+<group name="netsentry,snort,ids,">
+  <rule id="110010" level="8">
+    <match>[**]</match>
+    <description>NetSentry Snort alert detected</description>
+  </rule>
+</group>
+
+<group name="netsentry,firewall,iptables,">
+  <rule id="110020" level="7">
+    <match>NETSENTRY_FW_INPUT_DROP</match>
+    <description>NetSentry firewall INPUT drop detected</description>
+  </rule>
+
+  <rule id="110021" level="7">
+    <match>NETSENTRY_FW_FORWARD_DROP</match>
+    <description>NetSentry firewall FORWARD drop detected</description>
+  </rule>
+</group>
+
+<!-- NETSENTRY_CUSTOM_RULES_END -->

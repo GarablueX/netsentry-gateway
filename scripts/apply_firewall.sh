@@ -156,11 +156,16 @@ sudo iptables -A FORWARD -i "$AP_I" -o "$WAN_I" -s "$AP_NET" -j ACCEPT
 
 sudo iptables -A FORWARD -i "$WAN_I" -o "$AP_I" -d "$AP_NET" -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT 
 
+# Log final FORWARD drops for Wazuh, rate-limited
+sudo iptables -A FORWARD -m limit --limit 6/min --limit-burst 10 -j LOG --log-prefix "NETSENTRY_FW_FORWARD_DROP " --log-level 4
+
 sudo iptables -A  FORWARD -j DROP 
 
 
 
 
+# Log final INPUT drops for Wazuh, rate-limited
+sudo iptables -A INPUT -m limit --limit 6/min --limit-burst 10 -j LOG --log-prefix "NETSENTRY_FW_INPUT_DROP " --log-level 4
 #DROP EVERYTHING ELSE (STATEFULL FIREWALL)
 
 sudo iptables -P INPUT DROP 
