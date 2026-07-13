@@ -49,7 +49,7 @@ include 'snort_defaults.lua'
 default_variables.nets.AP_LAN = '10.10.10.0/24'
 default_variables.nets.HOME_LAN = '192.168.1.0/24'
 
-default_variables.nets.ADMIN_IP = '192.168.1.11'
+default_variables.nets.ADMIN_IP = '192.168.1.8'
 
 default_variables.nets.AP_GATEWAY = '10.10.10.1'
 default_variables.nets.HOME_GATEWAY = '192.168.1.19'

@@ -3,7 +3,7 @@ set -euo pipefail
 
 TAILSCALE_I="tailscale0"
 TAILSCALE_NET="100.64.0.0/10"
-ADMIN_IP="192.168.1.11"
+ADMIN_IP="192.168.1.6"
 HOME_LAN="192.168.1.0/24"
 AP_NET="10.10.10.0/24"
 WAN_I="enp3s0"
@@ -63,9 +63,14 @@ sudo iptables -A INPUT -p icmp -s "$HOME_LAN" -j ACCEPT
 
 sudo iptables -A INPUT -p icmp -s "$AP_NET" -j ACCEPT
 
-#
+#accept wazuh for admin and tailscale 
 
 
+
+sudo iptables -A INPUT -s "$ADMIN_IP" -p tcp --dport 8443 -j ACCEPT
+
+
+sudo iptables -A INPUT -i "$TAILSCALE_I" -s 100.64.0.0/10 -p tcp --dport 8443 -j ACCEPT
 
 
 #SSH ONLY FOR ADMIN 
