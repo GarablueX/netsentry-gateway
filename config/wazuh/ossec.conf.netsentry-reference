@@ -344,11 +344,6 @@
   </localfile>
 
   <localfile>
-    <log_format>syslog</log_format>
-    <location>/home/gbx/netsentry-gateway/snort/alerts/alert_fast.txt</location>
-  </localfile>
-
-  <localfile>
     <log_format>journald</log_format>
     <location>journald</location>
   </localfile>

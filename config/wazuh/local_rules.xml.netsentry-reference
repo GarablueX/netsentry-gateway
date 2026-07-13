@@ -27,14 +27,6 @@
     <description>NetSentry Suricata alert detected</description>
   </rule>
 </group>
-
-<group name="netsentry,snort,ids,">
-  <rule id="110010" level="8">
-    <match>[**]</match>
-    <description>NetSentry Snort alert detected</description>
-  </rule>
-</group>
-
 <group name="netsentry,firewall,iptables,">
   <rule id="110020" level="7">
     <match>NETSENTRY_FW_INPUT_DROP</match>
