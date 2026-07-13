@@ -63,9 +63,14 @@ sudo iptables -A INPUT -p icmp -s "$HOME_LAN" -j ACCEPT
 
 sudo iptables -A INPUT -p icmp -s "$AP_NET" -j ACCEPT
 
-#
+#accept wazuh for admin and tailscale 
 
 
+
+sudo iptables -A INPUT -s "$ADMIN_IP" -p tcp --dport 8443 -j ACCEPT
+
+
+sudo iptables -A INPUT -i "$TAILSCALE_I" -s 100.64.0.0/10 -p tcp --dport 8443 -j ACCEPT
 
 
 #SSH ONLY FOR ADMIN 
