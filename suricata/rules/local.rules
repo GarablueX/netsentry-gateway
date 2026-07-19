@@ -1,31 +1,62 @@
 
 alert icmp !$ADMIN_IP any -> $NETSENTRY_GATEWAY any (msg:"ICMP echo request from non-admin"; itype:8; sid:10000001; rev:4;)
+
 alert tcp !$ADMIN_IP any -> $NETSENTRY_GATEWAY 22 (msg:"SSH brute-force threshold from non-admin"; flags:S,CE; detection_filter:track by_src, count 10, seconds 60; sid:10000002; rev:4;)
+
 alert tcp !$ADMIN_IP any -> $NETSENTRY_GATEWAY 22 (msg:"SSH connection attempt from non-admin"; flags:S,CE; sid:10000003; rev:3;)
-alert tcp !$ADMIN_IP any -> $NETSENTRY_GATEWAY 3001 (msg:"AdGuard access attempt from non-admin"; flags:S,CE; sid:10000004; rev:3;)
+
+alert tcp !$ADMIN_IP any -> $NETSENTRY_GATEWAY 3001 (msg:"AdGuard access attempt from non-admin"; flags:S,CE; detection_filter:track by_src, count 4, seconds 1; sid:10000004; rev:3;)
+
 alert tcp !$ADMIN_IP any -> $NETSENTRY_GATEWAY 5050 (msg:"Legacy service access attempt on TCP/5050 from non-admin"; flags:S,CE; sid:10000005; rev:3;)
+
 alert tcp !$ADMIN_IP any -> $NETSENTRY_GATEWAY 5051 (msg:"Legacy API access attempt on TCP/5051 from non-admin"; flags:S,CE; sid:10000006; rev:2;)
+
 alert http !$ADMIN_IP any -> $NETSENTRY_GATEWAY any (msg:"Non-admin request containing /admin in URI"; flow:to_server,established; http.uri; content:"/admin"; sid:10000008; rev:3;)
-alert tcp any any -> $NETSENTRY_GATEWAY any (msg:"TCP SYN burst detected"; flags:S,CE; detection_filter:track by_src, count 15, seconds 15; sid:100000101; rev:4;)
+
+alert tcp any any -> $NETSENTRY_GATEWAY any (msg:"TCP SYN burst detected"; flags:S,CE; detection_filter:track by_src, count 50, seconds 5; sid:100000101; rev:4;)
+
 alert tcp any any -> $NETSENTRY_GATEWAY any (msg:"TCP NULL scan detected"; flags:0; sid:100000102; rev:4;)
+
 alert tcp any any -> $NETSENTRY_GATEWAY any (msg:"TCP FIN scan detected"; flags:F; sid:100000103; rev:4;)
+
 alert tcp any any -> $NETSENTRY_GATEWAY any (msg:"TCP XMAS scan detected"; flags:FPU; sid:100000104; rev:4;)
+
 alert tcp any any -> $NETSENTRY_GATEWAY any (msg:"TCP SYN/FIN scan detected"; flags:SF; sid:100000106; rev:4;)
+
 alert icmp any any -> $NETSENTRY_GATEWAY any (msg:"ICMP echo sweep detected"; itype:8; detection_filter:track by_src, count 10, seconds 5; sid:100000107; rev:4;)
+
 alert icmp any any -> $NETSENTRY_GATEWAY any (msg:"Large ICMP echo payload detected"; itype:8; dsize:>512; sid:100000108; rev:3;)
+
 alert tcp any any -> $NETSENTRY_GATEWAY any (msg:"TCP SYN flood detected"; flags:S,CE; detection_filter:track by_dst, count 100, seconds 5; sid:100000109; rev:4;)
+
 alert udp any any -> $NETSENTRY_GATEWAY any (msg:"UDP flood detected"; detection_filter:track by_dst, count 100, seconds 5; sid:100000110; rev:4;)
+
 alert tcp any any -> $NETSENTRY_GATEWAY any (msg:"TCP RST flood detected"; flags:R; detection_filter:track by_src, count 50, seconds 5; sid:100000111; rev:4;)
+
 alert dns $AP_LAN any -> !$NETSENTRY_GATEWAY 53 (msg:"DNS bypass from AP client"; flow:to_server; sid:100000112; rev:4;)
-alert tcp !$ADMIN_IP any -> 192.168.1.19 22 (msg:"SSH brute-force threshold to home gateway from non-admin source"; flags:S,CE; detection_filter:track by_src, count 10, seconds 10; sid:100000113; rev:4;)
+
+## alert tcp !$ADMIN_IP any -> 192.168.1.19 22 (msg:"SSH brute-force threshold to home gateway from non-admin source"; flags:S,CE; detection_filter:track by_src, count 10, seconds 10; sid:100000113; rev:4;)
+
 alert tcp $AP_LAN any -> 10.10.10.1 22 (msg:"SSH brute-force threshold from AP client"; flags:S,CE; detection_filter:track by_src, count 10, seconds 10; sid:100000114; rev:4;)
+
 alert ssh any any -> any 22 (msg:"SSH protocol version 1 detected"; flow:to_server,established; ssh.proto; content:"1."; startswith; sid:100000115; rev:3;)
+
 alert ftp any any -> $NETSENTRY_GATEWAY 21 (msg:"FTP anonymous login attempt detected"; flow:to_server,established; ftp.command; content:"USER"; ftp.command_data; content:"anonymous"; nocase; sid:100000116; rev:3;)
+
 alert ftp any any -> any 21 (msg:"FTP traffic detected"; flow:to_server; sid:100000117; rev:2;)
-alert tcp $AP_LAN any -> $AP_LAN any (msg:"AP client horizontal SYN scan detected"; flags:S,CE; detection_filter:track by_src, count 10, seconds 10; sid:100000118; rev:3;)
-alert tcp $AP_LAN any -> $NETSENTRY_GATEWAY [22,3001,5500,5050,5051,8081] (msg:"AP client probing administrative ports"; flags:S,CE; sid:100000119; rev:4;)
+
+alert tcp $AP_LAN any -> $AP_LAN any (msg:"AP client horizontal SYN scan detected"; flags:S,CE; detection_filter:track by_src, count 50, seconds 6 ; sid:100000118; rev:3;)
+
+## alert tcp $AP_LAN any -> $NETSENTRY_GATEWAY [22,3001] (msg:"AP client probing administrative ports"; flags:S,CE; sid:100000119; rev:4;)
+
 alert tcp $AP_LAN any -> $NETSENTRY_GATEWAY 445 (msg:"SMB access attempt from AP client"; flags:S,CE; sid:100000122; rev:4;)
+
 alert tcp $AP_LAN any -> any 3389 (msg:"RDP access attempt from AP client"; flags:S,CE; sid:100000123; rev:4;)
+
 alert tcp $HOME_LAN any -> $NETSENTRY_GATEWAY 23 (msg:"Telnet access attempt from home LAN"; flags:S,CE; sid:100000124; rev:4;)
+
 alert icmp any any -> $ADMIN_IP any (msg:"ICMP echo request to admin host"; itype:8; sid:100000125; rev:3;)
+
+alert tcp any any -> !$ADMIN_IP 8443 (msg:"Wazuh indexer access from non-admin source"; flags:S,CE; sid:100000126; rev:3;)
+
 
