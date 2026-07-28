@@ -1,0 +1,24 @@
+<group name="ids,suricata,">
+
+  <!-- CRITICAL: Active attacks / DoS / Scans -->
+  <rule id="100200" level="15">
+    <if_sid>86601</if_sid>
+    <field name="alert.signature_id">10000002|100000101|100000102|100000103|100000104|100000106|100000107|100000109|100000110|100000111|100000114|100000118</field>
+    <description>Suricata Critical [$(alert.signature_id)]: $(alert.signature)</description>
+  </rule>
+
+  <!-- HIGH: Lateral movement / Admin bypass / Protocol downgrade -->
+  <rule id="100201" level="12">
+    <if_sid>86601</if_sid>
+    <field name="alert.signature_id">10000004|10000008|100000112|100000115|100000116|100000122|100000123|100000124|100000126</field>
+    <description>Suricata High [$(alert.signature_id)]: $(alert.signature)</description>
+  </rule>
+
+  <!-- MEDIUM: Recon / Policy violations -->
+  <rule id="100202" level="7">
+    <if_sid>86601</if_sid>
+    <field name="alert.signature_id">10000001|10000005|10000006|100000108|100000125</field>
+    <description>Suricata Medium [$(alert.signature_id)]: $(alert.signature)</description>
+  </rule>
+
+</group>
