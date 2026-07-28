@@ -57,6 +57,6 @@ alert tcp $HOME_LAN any -> $NETSENTRY_GATEWAY 23 (msg:"Telnet access attempt fro
 
 alert icmp any any -> $ADMIN_IP any (msg:"ICMP echo request to admin host"; itype:8; sid:100000125; rev:3;)
 
-alert tcp any any -> !$ADMIN_IP 8443 (msg:"Wazuh indexer access from non-admin source"; flags:S,CE; sid:100000126; rev:3;)
+alert tcp !$ADMIN_IP any -> $NETSENTRY_GATEWAY  8443 (msg:"Wazuh indexer access from non-admin source"; flags:S,CE; sid:100000126; rev:3;)
 
 

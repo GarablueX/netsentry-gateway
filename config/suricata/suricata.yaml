@@ -18,7 +18,7 @@ vars:
     HOME_NET: "10.10.10.0/24"
     AP_LAN: "10.10.10.0/24"
     HOME_LAN: "192.168.1.0/24"
-    ADMIN_IP: "192.168.1.5"
+    ADMIN_IP: "192.168.1.7"
     NETSENTRY_GATEWAY: "[192.168.1.19,10.10.10.1]" 
     #HOME_NET: "[192.168.0.0/16]"
     #HOME_NET: "[10.0.0.0/8]"
@@ -624,7 +624,8 @@ logging:
 # Linux high speed capture support
 af-packet:
   - interface: wlx200db0220b9a
-    # Number of receive threads. "auto" uses the number of cores
+  - interface: enp3s0
+   # Number of receive threads. "auto" uses the number of cores
     #threads: auto
     # Default clusterid. AF_PACKET will load balance packets based on flow.
     cluster-id: 99
