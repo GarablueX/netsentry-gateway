@@ -1,4 +1,4 @@
-# NetSentry Gateway v1.8
+# NetSentry Gateway
 
 <p align="center">
   <img src="Pics/Logo.png" alt="NetSentry Logo" width="200">
@@ -6,305 +6,66 @@
 
 <p align="center">
   <b>Debian-based homelab security gateway</b><br>
-  AP + DHCP + DNS filtering + firewall/NAT + HTTPS dashboard + Snort IDS + structured alert watcher
+  AP + DHCP + DNS filtering + firewall/NAT + HTTPS dashboard + Suricata IDS + Wazuh SIEM
+</p>
+
+<p align="center">
+  <b>Current version: v2.6.0 — Stable</b>
 </p>
 
 ---
 
 ## Current Status
 
-**NetSentry v1.8** is the current stable homelab gateway state of this project.
+**NetSentry v2.6.0** is the current stable state of this project.
 
-This repository contains the current working gateway stack plus older files kept as a chronological build log. Some scripts, old service names, old IP references, and previous dashboard versions are intentionally preserved to show how the project evolved.
+This repository is kept as a chronological build log. It contains the current
+working gateway stack plus older files from earlier stages of the project
+(V0 through v1.9). Old service names, old IP references, and earlier dashboard
+or IDS versions are intentionally preserved to show how the project evolved —
+they are **not** part of the active stack unless referenced below.
 
-The current active stack is documented in:
+The authoritative technical reference is:
 
 ```text
-docs/netsentry-ids-dashboard-progress.md
+docs/NETSENTRY_MASTER_DOCUMENTATION.md
 ```
 
-Historical files should not be interpreted as active services unless they are referenced by the current systemd services, current firewall script, current Flask dashboard, current Snort rules, or master documentation.
+If anything in this README and the master documentation ever disagree, the
+master documentation wins.
 
 ---
 
 ## Project Type
 
-NetSentry is a **personal homelab/student cybersecurity project**.
+NetSentry is a **personal homelab / student cybersecurity project**.
 
-It is not presented as an enterprise-ready production product. The goal is to demonstrate practical networking, Linux administration, gateway security, IDS integration, firewalling, service automation, and dashboard development in a real lab environment.
+It is not presented as an enterprise-ready product. Its purpose is to
+demonstrate practical Linux networking, gateway security, IDS/SIEM
+integration, firewalling, service automation, and dashboard development in a
+real, continuously running lab environment — not a one-time lab exercise.
 
 ---
 
 ## What NetSentry Does
 
-NetSentry turns a Debian machine into a small security gateway appliance.
+NetSentry turns a Debian machine into a small security gateway appliance
+sitting between a home network and a set of Wi-Fi clients.
 
-Main capabilities:
-
-* Creates a Wi-Fi AP/client network
+* Creates a Wi-Fi AP / client network
 * Provides DHCP to AP clients
-* Provides DNS filtering through AdGuardHome
+* Provides DNS filtering through AdGuard Home
 * Routes AP client traffic through Debian
 * Applies firewall and NAT policy with iptables
-* Exposes a HTTPS dashboard through Nginx
-* Runs Flask as the internal dashboard backend
-* Runs Snort as an AP-side IDS sensor
-* Parses Snort alerts into structured JSON
-* Displays IDS alerts in the dashboard
-* Tracks Rev 3/high-severity detections
-* Monitors important systemd services from the dashboard
+* Runs Suricata as the active IDS engine
+* Feeds Suricata alerts, firewall logs, and system logs into Wazuh (SIEM)
+* Exposes a read-only HTTPS operations dashboard through Nginx + Flask
+* Monitors gateway services, DNS stats, clients, and firewall state
 * Supports remote administration through Tailscale
 
 ---
 
-## Screenshots and Evidence
-
-### 1. NetSentry Gateway Architecture
-
-![NetSentry Gateway Architecture](Pics/Architecture.png)
-
-This diagram shows the current NetSentry gateway layout:
-
-* AP/client LAN: `10.10.10.0/24`
-* NetSentry AP gateway: `10.10.10.1`
-* HOME/ISP LAN: `192.168.1.0/24`
-* NetSentry HOME-side IP: `192.168.1.19`
-* Admin laptop: `192.168.1.11`
-* Debian gateway handling DHCP, DNS filtering, firewall/NAT, monitoring, and IDS visibility
-
----
-
-### 2. Network Topology
-
-![NetSentry Network Topology](Pics/1.png)
-
-This diagram shows the physical and logical path between:
-
-* ISP router
-* NetSentry gateway
-* AP-side clients
-* Admin PC
-* Internet path
-* HOME/WAN side
-* AP/client side
-
----
-
-### 3. NAT Decision Flow
-
-![NAT Decision Flow](Pics/2.png)
-
-This flow explains the NAT behavior:
-
-* AP to HOME LAN traffic keeps the original `10.10.10.x` source
-* AP to Internet traffic is masqueraded through `enp3s0`
-* Traffic that does not match either case falls through with no NAT action
-
----
-
-### 4. Return Path and Forwarding Flow
-
-![Return Path and Forwarding Flow](Pics/3.png)
-
-This sequence diagram shows:
-
-* HOME LAN to AP LAN return routing
-* ISP router static route behavior
-* NetSentry forwarding through the AP interface
-* AP client outbound traffic to the Internet
-* NAT/MASQUERADE behavior for Internet-bound traffic
-
----
-
-### 5. Public Landing Page
-
-![NetSentry Home Page](Pics/home.png)
-
-The public landing page presents NetSentry as a secure Debian gateway and gives access to project information, architecture, status, and documentation.
-
----
-
-### 6. Admin Dashboard
-
-![NetSentry Admin Dashboard](<Pics/admin dashboard.png>)
-
-The admin dashboard shows live gateway state:
-
-* Internet status
-* Uptime
-* Client count
-* IDS alert count
-* DNS blocked count
-* DNS block rate
-* IPv4 forwarding status
-* Firewall NAT status
-* Service state
-* Interface state
-
-Visible active services include:
-
-```text
-nginx
-AdGuardHome
-netsentry_ap_interface
-netsentry_snort_ap
-netsentry_snort_watcher
-hostapd_process
-dnsmasq_process
-snort_process
-snort_watcher_process
-```
-
----
-
-### 7. Firewall Dashboard
-
-![NetSentry Firewall Dashboard](Pics/FIREWALL.png)
-
-The firewall dashboard provides a human-readable view of the active firewall policy.
-
-It verifies:
-
-* IPv4 forwarding
-* Final INPUT drop
-* NAT masquerade
-* LAN NAT exception
-* Established traffic handling
-* Invalid packet dropping
-* Loopback acceptance
-* AP forwarding
-* Return forwarding
-
----
-
-### 8. IDS Dashboard
-
-![NetSentry IDS Dashboard](Pics/IDS.png)
-
-The IDS dashboard shows Snort alert visibility with filters and severity counters.
-
-Current IDS dashboard features:
-
-* Total loaded alerts
-* Filtered alerts
-* Rev 1 / low severity count
-* Rev 2 / medium severity count
-* Rev 3 / high severity count
-* Latest Rev 3 detection panel
-* Source IP filter
-* Destination IP filter
-* SID filter
-* Rev filter
-* Protocol filter
-* Keyword filter
-* Top source IPs
-* Top SIDs
-* Structured alert source display
-* Raw Snort source display
-
----
-
-### 9. DNS Dashboard
-
-![NetSentry DNS Dashboard](Pics/DNS.png)
-
-The DNS dashboard shows AdGuardHome integration.
-
-It displays:
-
-* API connection status
-* Total DNS queries
-* Blocked DNS queries
-* DNS block percentage
-* Top blocked domains
-* Top clients
-* Top queried domains
-
----
-
-### 10. DHCP Client Visibility
-
-![NetSentry DHCP Clients](<Pics/CLEINTS .png>)
-
-The Clients page shows DHCP lease visibility for devices connected through the NetSentry AP/client network.
-
-It displays:
-
-* Client IP
-* MAC address
-* Hostname
-* Lease expiry time
-
-Sensitive MAC addresses and user-specific values should be redacted before public sharing.
-
----
-
-### 11. Network Dashboard
-
-![NetSentry Network Dashboard](Pics/network.png)
-
-The Network page shows Linux networking state:
-
-* Hostname
-* Load
-* Memory usage
-* Disk usage
-* Interfaces
-* Interface roles
-* Interface state
-* MAC addresses
-* IPv4 addresses
-* Routes
-* Listening ports
-
-It also confirms the presence of the Tailscale interface used for remote administration.
-
----
-
-### 12. Client Connectivity Test
-
-![Client Connected and Gateway Ping Test](<Pics/Client connected ( piging both gateways , Another client ,Admin).png>)
-
-This test screenshot shows a Windows client connected to the NetSentry Wi-Fi AP and successfully pinging important network points.
-
-It demonstrates:
-
-* AP availability
-* Client association
-* Reachability to NetSentry AP gateway
-* Reachability to NetSentry HOME-side IP
-* Reachability to admin/HOME-side network
-* Dual-gateway routing behavior
-
----
-
-### 13. AP Availability
-
-![AP Available](<Pics/AP AVAILABLE .png>)
-
-This screenshot shows the NetSentry AP being visible from a client device.
-
----
-
-### 14. DHCP Lease Evidence
-
-![DHCP Lease to Client](<Pics/DHCP Lease to Client .png>)
-
-This screenshot shows DHCP lease assignment from NetSentry to an AP client.
-
----
-
-### 15. ISP Router Static Route
-
-![Static Route to NetSentry Clients](<Pics/Static Route to Netsentry clients using ISP's Router Management UI.png>)
-
-This screenshot shows the ISP router static route used to return traffic to the NetSentry AP/client subnet.
-
-The static route allows HOME LAN devices to reach `10.10.10.0/24` through NetSentry.
-
----
-
-## High-Level Architecture
+## Architecture at a Glance
 
 ```text
 AP Client
@@ -314,7 +75,7 @@ AP Client
 NetSentry AP Interface
 wlx200db0220b9a / 10.10.10.1
    |
-   | Debian firewall / NAT / routing / IDS
+   | Debian firewall / NAT / routing / Suricata IDS
    v
 NetSentry HOME/WAN Interface
 enp3s0 / 192.168.1.19
@@ -323,39 +84,116 @@ enp3s0 / 192.168.1.19
 Home Router / Internet
 ```
 
-Web dashboard architecture:
+Two separate dashboards, two separate jobs:
 
 ```text
-Browser
-   |
-   | HTTP/HTTPS
-   v
-Nginx :80/:443
-   |
-   | reverse proxy
-   v
-Flask app 127.0.0.1:5000
+NetSentry Dashboard (Flask/Nginx)  ->  Gateway operations & status
+Wazuh Dashboard                    ->  Security investigation & alert triage
 ```
-
-IDS pipeline:
 
 ```text
-Snort on AP interface
-   |
-   v
-snort/alerts/alert_fast.txt
-   |
-   v
-Snort alert watcher
-   |
-   v
-data/ids/alerts.jsonl
-data/ids/alerts_latest.json
-data/ids/latest_rev3.json
-   |
-   v
-NetSentry IDS dashboard
+Browser -> Nginx :80/:443 -> Flask 127.0.0.1:5000        (gateway ops)
+Browser -> Nginx :8443     -> Wazuh dashboard             (SIEM)
 ```
+
+IDS/SIEM pipeline:
+
+```text
+Suricata on AP interface (wlx200db0220b9a)
+   |
+   v
+eve.json
+   |
+   v
+Filebeat -> Wazuh manager -> Wazuh indexer -> Wazuh dashboard
+```
+
+Full component list, data flow, and every route/port/rule are documented in
+`docs/NETSENTRY_MASTER_DOCUMENTATION.md`.
+
+---
+
+## Screenshots and Evidence
+
+### Network Architecture
+
+![NetSentry Gateway Architecture](Pics/Architecture.png)
+
+* AP/client LAN: `10.10.10.0/24`
+* NetSentry AP gateway: `10.10.10.1`
+* HOME/ISP LAN: `192.168.1.0/24`
+* NetSentry HOME-side IP: `192.168.1.19`
+* Admin laptop: `192.168.1.11`
+
+### Network Topology / NAT / Return Path
+
+![Network Topology](Pics/1.png)
+![NAT Decision Flow](Pics/2.png)
+![Return Path and Forwarding Flow](Pics/3.png)
+
+These three diagrams together explain the full packet path: AP client → NAT
+decision → HOME LAN or Internet → return path back to the AP client.
+
+### Public Landing Page
+
+![NetSentry Home Page](Pics/home.png)
+
+### Admin Dashboard — Gateway Operations
+
+![NetSentry Admin Dashboard](<Pics/admin dashboard.png>)
+
+Live gateway state: internet status, uptime, client count, DNS block rate,
+IPv4 forwarding status, firewall/NAT status, service state, interface state.
+
+### Firewall Dashboard
+
+![NetSentry Firewall Dashboard](Pics/FIREWALL.png)
+
+Human-readable view of the active firewall policy: IPv4 forwarding, final
+INPUT drop, NAT masquerade, LAN NAT exception, established-traffic handling,
+invalid packet dropping, loopback acceptance, AP/return forwarding.
+
+### DNS Dashboard
+
+![NetSentry DNS Dashboard](Pics/DNS.png)
+
+AdGuard Home integration: total/blocked queries, block percentage, top
+blocked domains, top clients, top queried domains.
+
+### DHCP Client Visibility
+
+![NetSentry DHCP Clients](<Pics/CLEINTS .png>)
+
+Client IP, MAC address, hostname, lease expiry for devices on the AP network.
+Sensitive MAC addresses and user-specific values are redacted before public
+sharing.
+
+### Network Dashboard
+
+![NetSentry Network Dashboard](Pics/network.png)
+
+Hostname, load, memory/disk usage, interfaces, interface roles/state, MAC
+addresses, IPv4 addresses, routes, listening ports, and confirms the
+Tailscale interface used for remote administration.
+
+### Connectivity Evidence
+
+![Client Connected](<Pics/Client connected ( piging both gateways , Another client ,Admin).png>)
+![AP Available](<Pics/AP AVAILABLE .png>)
+![DHCP Lease to Client](<Pics/DHCP Lease to Client .png>)
+![ISP Router Static Route](<Pics/Static Route to Netsentry clients using ISP's Router Management UI.png>)
+
+Client association, DHCP lease assignment, reachability to both gateways,
+and the ISP router static route that lets HOME LAN devices reach
+`10.10.10.0/24` through NetSentry.
+
+### Wazuh Dashboards
+
+![Wazuh Threat Hunting Dashboard](Pics/Wazuh%20Threat%20Hunting%20Dashboard.png)
+![Wazuh MITRE ATT&CK Dashboard](<Pics/Wazuh MITRE ATT&CK dashboard .png>)
+
+Security investigation view: Suricata alerts, firewall drop events, MITRE
+ATT&CK mapping.
 
 ---
 
@@ -366,8 +204,8 @@ NetSentry IDS dashboard
 ```text
 Interface:        enp3s0
 Network:          192.168.1.0/24
-NetSentry IP:     192.168.1.19
-Admin laptop IP:  192.168.1.11
+NetSentry IP:      192.168.1.19
+Admin laptop IP:   192.168.1.11
 ```
 
 ### AP / Client Side
@@ -375,34 +213,33 @@ Admin laptop IP:  192.168.1.11
 ```text
 Interface:        wlx200db0220b9a
 Network:          10.10.10.0/24
-Gateway IP:       10.10.10.1
-SSID:             NetSentry-Test
-DHCP range:       10.10.10.50 - 10.10.10.150
+Gateway IP:        10.10.10.1
+SSID:              NetSentry-Test
+DHCP range:        10.10.10.50 - 10.10.10.150
 ```
 
 ---
 
 ## Main Components
 
-| Component           | Purpose                                   |
-| ------------------- | ----------------------------------------- |
-| Debian              | Base operating system                     |
-| hostapd             | Wi-Fi AP service                          |
-| dnsmasq             | DHCP for AP clients                       |
-| AdGuardHome         | DNS filtering                             |
-| iptables            | Firewall, NAT, forwarding policy          |
-| Nginx               | HTTPS frontend and reverse proxy          |
-| Flask               | Dashboard backend                         |
-| Snort               | AP-side IDS sensor                        |
-| Snort alert watcher | Converts Snort alerts into dashboard JSON |
-| Tailscale           | Remote private administration             |
-| systemd             | Boot automation for gateway services      |
+| Component    | Purpose                                    |
+| ------------ | ------------------------------------------- |
+| Debian       | Base operating system                       |
+| hostapd      | Wi-Fi AP service                            |
+| dnsmasq      | DHCP for AP clients                         |
+| AdGuard Home | DNS filtering                               |
+| iptables     | Firewall, NAT, forwarding policy            |
+| Nginx        | HTTPS frontend and reverse proxy            |
+| Flask        | Gateway operations dashboard backend        |
+| Suricata     | AP-side IDS engine                          |
+| Wazuh        | SIEM — alert correlation and investigation  |
+| Filebeat     | Ships Suricata/system logs into Wazuh       |
+| Tailscale    | Remote private administration               |
+| systemd      | Boot automation for gateway services        |
 
 ---
 
 ## Active Systemd Services
-
-Current important services:
 
 ```text
 ssh.service
@@ -414,16 +251,23 @@ netsentry-dnsmasq.service
 hostapd.service
 AdGuardHome.service
 tailscaled.service
-netsentry-snort-ap.service
-netsentry-snort-watcher.service
+suricata.service
+wazuh-indexer.service
+wazuh-manager.service
+wazuh-dashboard.service
+filebeat.service
 ```
 
-Legacy/deprecated service names may still appear in older documentation or scripts, but they are not part of the current active v1.8 stack unless explicitly referenced in the master documentation.
+Snort-named services (`netsentry-snort-ap`, `netsentry-snort-watcher`) are
+**historical** — removed in v2.2 and no longer part of the active stack. They
+may still appear in `docs/` build-log files.
 
 Service check command:
 
 ```bash
-for s in ssh nginx netsentry-web netsentry-ap-interface hostapd AdGuardHome tailscaled netsentry-firewall netsentry-dnsmasq netsentry-snort-ap netsentry-snort-watcher; do
+for s in ssh nginx netsentry-web netsentry-ap-interface hostapd \
+         AdGuardHome tailscaled netsentry-firewall netsentry-dnsmasq \
+         suricata wazuh-indexer wazuh-manager wazuh-dashboard filebeat; do
   printf "%-32s enabled=%-12s active=%s\n" \
   "$s" \
   "$(systemctl is-enabled "$s" 2>/dev/null || echo not-found)" \
@@ -437,355 +281,113 @@ done
 
 ```text
 app/
-  netsentry_app.py              Flask dashboard backend
-  static/css/netsentry.css      Dashboard styling
-  templates/                    Flask templates
+  netsentry_app.py              Current Flask dashboard backend (read-only)
+  static/                       Dashboard CSS/JS
+  templates/                    Flask templates (public + admin)
 
 config/
   nginx/                        Nginx site configuration
-  snort/                        Repository copy of Snort config
-  systemd/                      Repository copies of systemd units
-  ap/                           AP/DHCP-related config examples
+  suricata/                     Repository copy of suricata.yaml
+  wazuh/                        Repository reference copies (ossec.conf,
+                                 local_rules.xml, jvm.options, Suricata SID map)
+  systemd/                      Repository copies of active systemd units
+  ap/                           AP/DHCP config examples (dnsmasq, hostapd)
 
 docs/
-  NETSENTRY_MASTER_DOCUMENTATION.md
-                                Main project documentation
+  NETSENTRY_MASTER_DOCUMENTATION.md   Full technical reference (current)
+  releases/                           Dated release notes, v1.9 -> v2.6
+  *.md                                 Historical build-log docs (older stages)
 
-Pics/
-  Logo.png
-  Architecture.png
-  1.png
-  2.png
-  3.png
-  home.png
-  admin dashboard.png
-  FIREWALL.png
-  IDS.png
-  DNS.png
-  CLEINTS .png
-  network.png
-  Client connected ( piging both gateways , Another client ,Admin).png
+Pics/                            Screenshots and diagrams
 
 scripts/
   apply_firewall.sh             Active firewall/NAT script
-  snort_alert_watcher.py        Snort alert parser/watcher
+  performance_check.sh          Resource usage check for Suricata + Wazuh
+  netsentry_dashboard.py        Historical dashboard (superseded by app/)
+  netsentry_portal.py           Historical dashboard/portal (superseded)
+  netsentry_status_api.py       Historical status API (superseded)
+  honeypot_lite.py              Historical decoy login service
+  http_test_service.py          Historical test HTTP service
+  start_python_services.py      Historical service launcher
+  stop_python_services.py       Historical service stopper
 
-snort/
-  rules/local_ap.rules          AP-side Snort rules
-  alerts/                       Runtime Snort alert output, ignored by Git
-  pcaps/                        Runtime packet captures, ignored by Git
+suricata/
+  rules/local.rules             Active AP-side Suricata rules
 
-data/
-  ids/                          Runtime structured IDS data, ignored by Git
+tests/
+  *.md                          Manual validation test notes
+
+NetSentry-Gateway-Architecture.pdf   Architecture reference document
 ```
 
 ---
 
 ## Current Web Dashboard
 
-The dashboard includes:
+The Flask dashboard is intentionally **read-only** — it does not modify
+firewall rules, restart services, or trigger packet captures.
 
-* Public project pages
-* System status
-* Service status
-* Client/DHCP visibility
-* DNS filtering statistics
-* Firewall visibility
-* Network interfaces/routes/listening ports
-* Logs
-* IDS alerts
-* Rev-based alert filtering
-* Latest Rev 3 alert card
+Public routes: `/`, `/about`, `/features`, `/architecture`, `/status`,
+`/docs`, `/hardware`, `/contact`
 
-Admin dashboard route:
+Admin routes (session-authenticated):
 
 ```text
 /admin/dashboard
+/admin/clients
+/admin/dns
+/admin/firewall
+/admin/network
 ```
 
-IDS dashboard route:
+IDS/log investigation is **not** part of this dashboard as of v2.2 — that is
+Wazuh's job. See [Dashboard Direction](#dashboard-direction-history) below.
 
-```text
-/admin/ids
-```
+---
 
-IDS API route:
+## Dashboard Direction (History)
 
-```text
-/api/ids/alerts
-```
+Earlier versions (up to v1.8) included a built-in Snort-based IDS dashboard
+with routes like `/admin/ids` and `/api/ids/alerts`. As of **v2.2**, that
+dashboard and its routes were removed from the Flask app. IDS/log
+investigation moved entirely to Wazuh to avoid maintaining a second,
+duplicate alert viewer.
+
+| Dashboard | Responsibility            |
+| --------- | -------------------------- |
+| NetSentry | Gateway operations/status  |
+| Wazuh     | Security investigation     |
 
 ---
 
 ## IDS Design
 
-Snort runs on the AP/client interface:
+Suricata runs on the AP/client interface (`wlx200db0220b9a`) intentionally,
+so it sees real client IPs before NAT rewrites them.
 
 ```text
-wlx200db0220b9a
+Active rules file:     suricata/rules/local.rules
+Repository config:     config/suricata/suricata.yaml
 ```
 
-This is intentional because AP-side capture sees the real client IPs before NAT.
+Rules use NetSentry-specific variables (`$AP_LAN`, `$HOME_LAN`, `$ADMIN_IP`,
+`$AP_GATEWAY`, `$HOME_GATEWAY`, `$NETSENTRY_GATEWAY`) to stay readable.
 
-Main Snort rules file:
-
-```text
-snort/rules/local_ap.rules
-```
-
-Main Snort configuration:
-
-```text
-/usr/local/etc/snort/snort.lua
-```
-
-Repository copy:
-
-```text
-config/snort/snort.lua
-```
-
----
-
-## Snort Variables
-
-The rules use NetSentry-specific variables:
-
-```text
-$AP_LAN              10.10.10.0/24
-$HOME_LAN            192.168.1.0/24
-$ADMIN_IP            192.168.1.11
-$AP_GATEWAY          10.10.10.1
-$HOME_GATEWAY        192.168.1.19
-$NETSENTRY_GATEWAY   [10.10.10.1,192.168.1.19]
-```
-
-These keep the rules readable and easier to maintain.
-
----
-
-## Snort Alert Delay Fix
-
-During development, Snort alerts were delayed because packet/event batching was active.
-
-The working fast configuration is:
-
-```lua
-daq = {
-    batch_size = 1
-}
-
-event_queue = {
-    max_queue = 16,
-    log = 16,
-    order_events = 'priority'
-}
-```
-
-Important behavior:
-
-```text
-daq.batch_size = 1 reduces alert delay.
-event_queue.log = 16 allows multiple matching alerts per packet.
-event_queue.log = 1 was too aggressive and hid some alerts.
-```
-
----
-
-## Snort Severity Convention
-
-NetSentry v1.8 uses Snort `rev` as a project severity convention:
-
-```text
-rev:1 = low severity
-rev:2 = medium severity
-rev:3 = high / critical severity
-```
-
-In normal Snort usage, `rev` means rule revision. In this project, it is intentionally used to drive dashboard color and severity behavior.
-
-Dashboard color mapping:
-
-```text
-Rev 1 = green
-Rev 2 = yellow
-Rev 3 = red
-```
-
----
-
-## Current Snort Rule Categories
-
-Current AP-side Snort rules cover:
-
-```text
-ICMP ping from non-admin
-Oversized ICMP payload
-ICMP sweep
-SSH SYN attempts
-SSH repeated connection attempts
-AdGuard UI access attempts
-Old dashboard/API/test port probing
-TCP SYN burst
-TCP NULL scan
-TCP FIN scan
-TCP XMAS scan
-TCP SYN/FIN scan
-TCP SYN flood
-UDP flood
-TCP reset flood
-DNS bypass attempts
-FTP access attempts
-FTP anonymous login attempts
-AP client scanning AP clients
-AP client probing sensitive gateway ports
-SMB/RDP/Telnet-style access attempts
-```
-
-Example DNS bypass rule:
-
-```snort
-alert udp $AP_LAN any -> !$NETSENTRY_GATEWAY 53 (
-    msg:"DNS BYPASSING FROM CLIENTS detected";
-    sid:100000112;
-    rev:3;
-)
-```
-
----
-
-## HTTPS Limitation
-
-Snort can detect HTTPS traffic at the network level, but it cannot inspect encrypted web paths.
-
-Snort can detect:
-
-```text
-client IP
-server IP
-TCP port
-TLS/HTTPS connection
-scan behavior
-DNS bypass
-SSH attempts
-gateway probing
-flood behavior
-```
-
-Snort cannot see inside HTTPS:
-
-```text
-/admin/login
-/admin/dashboard
-HTTP headers
-POST body
-User-Agent
-username/password fields
-```
-
-Therefore, NetSentry separates responsibilities:
-
-```text
-Snort       = network IDS
-Nginx logs  = HTTPS request/path detection
-Flask logs  = admin/auth detection
-```
-
----
-
-## Snort Alert Watcher
-
-The watcher reads raw Snort alerts and writes structured JSON.
-
-Watcher script:
-
-```text
-scripts/snort_alert_watcher.py
-```
-
-Input:
-
-```text
-snort/alerts/alert_fast.txt
-```
-
-Outputs:
-
-```text
-data/ids/alerts.jsonl
-data/ids/alerts_latest.json
-data/ids/latest_rev3.json
-```
-
-The watcher extracts:
-
-```text
-timestamp
-Snort time
-GID
-SID
-REV
-severity
-message
-protocol
-source IP
-source port
-destination IP
-destination port
-priority
-raw alert line
-```
-
-The dashboard reads these structured files instead of parsing raw Snort output directly.
-
----
-
-## Rev 3 Evidence Capture
-
-The intended Rev 3 behavior is:
-
-```text
-Rev 3 alert detected
-Watcher identifies source IP
-tcpdump captures traffic for a short time window
-PCAP is saved
-Dashboard displays PCAP filename when available
-```
-
-Runtime PCAP folder:
-
-```text
-snort/pcaps/
-```
-
-PCAP files are binary. Read them with:
-
-```bash
-sudo tcpdump -nn -r file.pcap
-```
-
-or open them in Wireshark.
-
-PCAP files are runtime evidence and are not committed to Git.
+Snort was the original IDS engine (through v1.8) and was removed in v2.2
+after running alongside Suricata produced duplicate, noisy alerts. All Snort
+work is preserved in git history and in `docs/` build-log files.
 
 ---
 
 ## Firewall Implementation
 
-NetSentry currently uses **iptables-based firewall scripts** for the active gateway configuration.
-
-References to nftables are historical/planned notes only and are not the active firewall implementation in v1.8.
-
-Active firewall script:
+NetSentry uses **iptables** for the active firewall/NAT policy.
+References to nftables anywhere in `docs/` are historical/planning notes
+only — they were never the active implementation.
 
 ```text
-scripts/apply_firewall.sh
-```
-
-Active firewall service:
-
-```text
-netsentry-firewall.service
+Active script:   scripts/apply_firewall.sh
+Active service:  netsentry-firewall.service
 ```
 
 Key NAT behavior:
@@ -798,68 +400,32 @@ iptables -t nat -A POSTROUTING -s "$AP_NET" -d "$HOME_LAN" -j RETURN
 iptables -t nat -A POSTROUTING -s "$AP_NET" -o "$WAN_I" -j MASQUERADE
 ```
 
+Dropped INPUT/FORWARD packets are logged with rate-limited, greppable
+prefixes so Wazuh can correlate them:
+
+```text
+NETSENTRY_FW_INPUT_DROP
+NETSENTRY_FW_FORWARD_DROP
+```
+
+> **Known inconsistency to fix:** `scripts/apply_firewall.sh` currently
+> hardcodes `ADMIN_IP="192.168.1.10"`, while every other reference in this
+> repository (Nginx config, Flask app, Suricata rules, docs, tests) uses
+> `192.168.1.11`. Treat `192.168.1.11` as correct and update the firewall
+> script to match before relying on admin-only firewall rules.
+
 ---
 
 ## Tailscale Remote Administration
 
-NetSentry v1.8 supports remote private administration through Tailscale.
-
-Tailscale interface:
-
 ```text
-tailscale0
+Interface: tailscale0
+Purpose:   Remote SSH + remote HTTPS dashboard access without exposing
+           NetSentry directly to the public Internet.
 ```
 
-Purpose:
-
-```text
-Remote SSH access
-Remote HTTPS dashboard access
-Private administration without exposing the dashboard directly to the public Internet
-```
-
-Tailscale is not currently used as:
-
-```text
-exit node
-subnet router
-public VPN gateway
-```
-
-The current design is intentionally limited to direct private access to the NetSentry machine.
-
----
-
-## Current vs Historical Files
-
-This repository is kept as a chronological project build log.
-
-Some files are deprecated or historical. They may contain:
-
-```text
-old service names
-old IP addresses
-older dashboard versions
-older Snort rule experiments
-old firewall approaches
-test scripts
-proof-of-concept services
-```
-
-These files are kept to show project evolution.
-
-They are not part of the current active NetSentry v1.8 stack unless referenced by:
-
-```text
-docs/NETSENTRY_MASTER_DOCUMENTATION.md
-current systemd service files
-scripts/apply_firewall.sh
-app/netsentry_app.py
-snort/rules/local_ap.rules
-config/snort/snort.lua
-```
-
-Deprecated files should be treated as historical build evidence, not active production code.
+Tailscale is **not** used as an exit node, subnet router, or public VPN
+gateway. Access is intentionally limited to the NetSentry host itself.
 
 ---
 
@@ -874,20 +440,19 @@ web dashboard passwords
 NETSENTRY_WEB_SECRET
 private TLS keys
 .env files
-runtime alert logs
-runtime JSON alert files
+runtime alert/log files
 pcap files
 real credentials
 ```
 
-Important secret locations outside Git:
+Secret locations outside git:
 
 ```text
 /etc/netsentry/netsentry-web.env
 /etc/netsentry/certs/
 ```
 
-Recommended secret check before commit:
+Pre-commit secret check:
 
 ```bash
 git diff --cached | grep -Ei 'wpa_passphrase=|NETSENTRY_WEB_PASSWORD=|NETSENTRY_WEB_SECRET=|-----BEGIN .*PRIVATE KEY-----|PUT_YOUR_REAL_PASSWORD|PUT_A_LONG_RANDOM_SECRET' \
@@ -895,216 +460,60 @@ git diff --cached | grep -Ei 'wpa_passphrase=|NETSENTRY_WEB_PASSWORD=|NETSENTRY_
 || echo "OK: no real secret patterns found"
 ```
 
----
-
-## Runtime Files Ignored by Git
-
-Runtime output should not be committed.
-
-Ignored categories include:
-
-```text
-snort/alerts/*
-snort/pcaps/*
-data/ids/*.json
-data/ids/*.jsonl
-data/ids/rev3_flags/*
-*.pcap
-*.bak*
-*.key
-*.crt
-```
+> `scripts/netsentry_portal.py` (historical, superseded) still contains
+> hardcoded placeholder values `ADMIN_PASSWORD = "PASSWORDHERE"` and
+> `PORTAL_SECRET = "change_this_secret_later_please"`. They are unused
+> placeholders, not real secrets, but should be replaced or removed before
+> the repository is treated as public-facing, since they read as real
+> credentials out of context.
 
 ---
 
-## Testing Performed
-
-PowerShell was used for simple client tests:
+## Known Unfinished / Optional Work
 
 ```text
-ping
-large ping
-TCP connection attempts
-DNS queries
-port probes
-```
-
-Ubuntu VM was used for stronger tests:
-
-```text
-nmap scans
-hping3 SYN tests
-NULL/FIN/XMAS scans
-DNS bypass testing
-crafted traffic
-```
-
-Confirmed working:
-
-```text
-AP-side Snort live capture
-Snort variables
-detection_filter rules
-fast Snort alerting
-Snort AP service
-Snort alert watcher
-structured JSON output
-IDS dashboard Rev filters
-Latest Rev 3 display
-dashboard service visibility
-AdGuard DNS API integration
-iptables firewall dashboard
-Tailscale interface visibility
-```
-
----
-
-## Reboot Test Checklist
-
-After reboot, verify:
-
-```bash
-for s in ssh nginx netsentry-web netsentry-ap-interface hostapd AdGuardHome tailscaled netsentry-firewall netsentry-dnsmasq netsentry-snort-ap netsentry-snort-watcher; do
-  printf "%-32s enabled=%-12s active=%s\n" \
-  "$s" \
-  "$(systemctl is-enabled "$s" 2>/dev/null || echo not-found)" \
-  "$(systemctl is-active "$s" 2>/dev/null || echo not-found)"
-done
-```
-
-Functional tests:
-
-```text
-AP starts
-client receives DHCP lease
-client uses NetSentry as gateway
-DNS filtering works
-internet forwarding works
-dashboard loads over HTTPS
-Snort AP service is active
-Snort watcher service is active
-Snort alert appears after test traffic
-IDS dashboard updates
-latest Rev 3 card updates after Rev 3 alert
-Tailscale interface appears
-remote SSH through Tailscale works
-```
-
----
-
-## Known Unfinished Work
-
-Still unfinished or optional:
-
-```text
-Actions dashboard
-watch/restrict/ban/unblock clients
-safe firewall enforcement helper
+Actions dashboard: watch / restrict / ban / unblock clients
+Safe firewall enforcement helper
 Nginx/Flask HTTPS attack watcher
-home-side Snort sensor on enp3s0
-final architecture diagram polish
-final demo checklist
+Home-side Suricata sensor on enp3s0
+Final architecture diagram polish
 ```
+
+Planned route: `/admin/actions`
+Planned persistent state file: `/var/lib/netsentry/client_actions.json`
+
+Never allow automatic blocking of gateway/admin IPs or entire subnets
+(`10.10.10.0/24`, `192.168.1.0/24`) — see the master documentation for the
+full safe-implementation order.
 
 ---
 
-## Future Actions Dashboard Plan
+## Current vs Historical Files
 
-Planned route:
-
-```text
-/admin/actions
-```
-
-Planned actions:
-
-```text
-Watch client
-Restrict client
-Ban client
-Unblock client
-```
-
-Safe implementation order:
+This repository is a chronological build log. Files under `docs/*.md`
+(outside `docs/releases/`) and `scripts/netsentry_dashboard.py`,
+`scripts/netsentry_portal.py`, `scripts/netsentry_status_api.py`,
+`scripts/honeypot_lite.py`, `scripts/http_test_service.py` are historical
+evidence of earlier project stages. They are **not** part of the active
+v2.6 stack unless referenced by:
 
 ```text
-1. UI only
-2. state file only
-3. watch mode
-4. restrict mode
-5. ban mode
-6. unblock mode
-7. firewall helper
-```
-
-Persistent state file:
-
-```text
-/var/lib/netsentry/client_actions.json
-```
-
-Never allow automatic blocking of:
-
-```text
-192.168.1.11
-10.10.10.1
-192.168.1.19
-127.0.0.1
-```
-
-Never allow subnet blocking:
-
-```text
-10.10.10.0/24
-192.168.1.0/24
-```
-
----
-
-## Current Stable State
-
-NetSentry v1.8 currently provides:
-
-```text
-routing
-AP access
-DHCP
-DNS filtering
-firewalling
-HTTPS dashboard
-Snort AP IDS
-Snort alert watcher
-structured IDS alerts
-Rev severity dashboard
-service visibility
-Tailscale remote administration
-```
-
-The project is now in a strong v1.8 homelab release state.
-
----
-
-## Public Repository Readiness
-
-Before making the repository public:
-
-```text
-README explains current vs historical files
-legacy hardcoded password strings are removed or clearly deprecated
-iptables/nftables mismatch is clarified
-no real credentials are committed
-no TLS private keys are committed
-no Wi-Fi passphrase is committed
-no runtime alerts or pcaps are committed
-master documentation is current
-reboot test passes
-screenshots are redacted where needed
+docs/NETSENTRY_MASTER_DOCUMENTATION.md
+current systemd service files (config/systemd/)
+scripts/apply_firewall.sh
+app/netsentry_app.py
+suricata/rules/local.rules
+config/suricata/suricata.yaml
+config/wazuh/
 ```
 
 ---
 
 ## Final Note
 
-NetSentry v1.8 is a personal homelab security gateway project.
-
-It is not an enterprise-ready product and is not presented as one. Its value is in demonstrating practical implementation of Linux networking, AP mode, DHCP, DNS filtering, firewalling, IDS monitoring, service automation, remote private administration, and dashboard visibility in a real working environment.
+NetSentry v2.6.0 is a personal homelab security gateway project. It is not
+an enterprise-ready product and is not presented as one. Its value is in
+demonstrating practical implementation of Linux networking, AP mode, DHCP,
+DNS filtering, firewalling, IDS/SIEM integration, service automation, remote
+private administration, and operational dashboard visibility in a real,
+continuously running environment.
