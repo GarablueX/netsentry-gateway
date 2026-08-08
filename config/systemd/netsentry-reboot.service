@@ -1,0 +1,13 @@
+[Unit]
+Description=Reboot the device automatically
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/systemctl reboot
+RemainAfterExit=no
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
