@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <b>Debian-based homelab security gateway</b><br>
+  <b>Debian‑based homelab security gateway</b><br>
   AP + DHCP + DNS filtering + firewall/NAT + HTTPS dashboard + Suricata IDS + Wazuh SIEM
 </p>
 
@@ -17,63 +17,30 @@
 
 ## Overview
 
-NetSentry is a **personal homelab / student cybersecurity project** that transforms a Debian machine into a fully functional security gateway appliance. It integrates wireless access point, DHCP, DNS filtering, stateful firewall/NAT, network intrusion detection, security information and event management, and a read-only operations dashboard—all orchestrated via systemd for continuous operation.
+NetSentry turns a Debian machine into a fully functional security gateway appliance that sits between a home network and a set of Wi‑Fi clients. It combines routing, DHCP, DNS filtering, stateful firewall/NAT, network‑level intrusion detection (Suricata), security information and event management (Wazuh), and a read‑only operations dashboard—all orchestrated via systemd for continuous operation.
 
-This repository serves as a chronological build log, preserving the evolution from early prototypes (V0–v1.9) to the current stable release (v2.6). The authoritative technical reference is [`docs/NETSENTRY_MASTER_DOCUMENTATION.md`](docs/NETSENTRY_MASTER_DOCUMENTATION.md).
+> **Authoritative reference:** [`docs/NETSENTRY_MASTER_DOCUMENTATION.md`](docs/NETSENTRY_MASTER_DOCUMENTATION.md)
 
 ---
 
-## Features
+## Key Features
 
 - **Wi‑Fi Access Point** (`hostapd`) on isolated client subnet (`10.10.10.0/24`)
 - **DHCP Server** (`dnsmasq`) for dynamic client addressing
 - **DNS Filtering** via AdGuard Home (blocklists, safe search, parental controls)
-- **Stateful Firewall/NAT** (`iptables`) with separate policies for LAN ↔ LAN and LAN ↔ Internet traffic
+- **Stateful Firewall/NAT** (`iptables`) with separate policies for LAN��↔LAN and LAN��↔Internet traffic
 - **Network IDS** (Suricata) monitoring AP‑side traffic pre‑NAT for real client visibility
 - **SIEM** (Wazuh) correlating Suricata alerts, firewall logs, and system events for investigation
-- **Read‑Only Operations Dashboard** (Flask + Nginx) displaying gateway status, clients, DNS stats, firewall rules, and service health
+- **Read‑Only Operations Dashboard** (Flask + Nginx) showing gateway status, clients, DNS stats, firewall rules, and service health
 - **Remote Administration** via Tailscale (encrypted overlay for SSH/HTTPS access)
 - **Service Orchestration** with systemd (boot‑ordered, logging, auto‑restart)
 - **Security‑First Design**: Dashboard never modifies firewall or services; privileged actions are isolated in separate agents
-- **Transparent Documentation**: Full architecture, configuration, validation checklist, and version history
-
----
-
-## Architecture
-
-```text
-AP Client
-   |
-   | Wi-Fi / 10.10.10.0/24
-   v
-NetSentry AP Interface
-wlx200db0220b9a / 10.10.10.1
-   |
-   | Debian firewall / NAT / routing / Suricata IDS
-   v
-NetSentry HOME/WAN Interface
-enp3s0 / 192.168.1.19
-   |
-   v
-Home Router / Internet
-```
-
-### Data Flows
-
-- **IDS/SIEM Pipeline**:  
-  `Suricata (AP interface) → eve.json → Filebeat → Wazuh manager/indexer → Wazuh dashboard`
-
-- **Dashboard Access**:  
-  `Browser → Nginx (:80/:443) → Flask (127.0.0.1:5000) → Gateway operations`  
-  `Browser → Nginx (:8443) → Wazuh dashboard → Security investigation`
-
-Full component responsibilities, ports, routes, and rules are detailed in the master documentation.
 
 ---
 
 ## Getting Started
 
-> **Note**: This project assumes a Debian‑based system with administrative access. Adjust interface names (`wlx200db0220b9a`, `enp3s0`) and IP schemes to match your hardware.
+> **Note**: Adjust interface names (`wlx200db0220b9a`, `enp3s0`) and IP schemes to match your hardware.
 
 1. **Clone the repository**  
    ```bash
@@ -86,7 +53,7 @@ Full component responsibilities, ports, routes, and rules are detailed in the ma
    less docs/NETSENTRY_MASTER_DOCUMENTATION.md
    ```
 
-3. **Install dependencies** (refer to documentation for package lists)
+3. **Install dependencies** (see master documentation for package lists)
 
 4. **Configure secrets**  
    - Create `/etc/netsentry/netsentry-web.env` with Flask secret and credentials  
@@ -109,73 +76,6 @@ Full component responsibilities, ports, routes, and rules are detailed in the ma
    - Connect a client to the `NetSentry-Test` SSID  
    - Access the dashboard at `http://<netsentry-home-ip>` or `https://<netsentry-home-ip>`  
    - Monitor Wazuh at `https://<netsentry-home-ip>:8443`
-
----
-
-## Repository Structure
-
-```text
-app/
-  netsentry_app.py          # Flask dashboard backend (read‑only)
-  static/                   # Dashboard CSS/JS
-  templates/                # Jinja2 templates (public + admin)
-
-config/
-  nginx/                    # Nginx site configuration
-  suricata/                 # suricata.yaml reference
-  wazuh/                    # Wazuh configuration references
-  systemd/                  # Active systemd unit files
-  ap/                       # AP/DHCP config examples
-
-docs/
-  NETSENTRY_MASTER_DOCUMENTATION.md   # Full technical reference (current)
-  releases/                           # Dated release notes (v1.9 → v2.6)
-  *.md                                # Historical build‑log docs
-
-Pics/                         # Screenshots and diagrams
-
-scripts/
-  apply_firewall.sh         # Active firewall/NAT script
-  performance_check.sh      # Resource usage validation
-  # Historical/superseded scripts retained for reference:
-  # netsentry_dashboard.py, netsentry_portal.py, netsentry_status_api.py,
-  # honeypot_lite.py, http_test_service.py, start/stop_python_services.py
-
-suricata/
-  rules/local.rules         # Active AP‑side Suricata rules
-
-tests/
-  *.md                      # Manual validation test notes
-```
-
----
-
-## Dashboard
-
-The Flask‑based operations dashboard is **intentionally read‑only**—it never modifies firewall rules, restarts services, or triggers packet captures.
-
-### Public Routes
-
-- `/` – Home / landing page  
-- `/about` – Project overview  
-- `/features` – Component breakdown  
-- `/architecture` – Network diagrams  
-- `/status` – JSON health endpoint  
-- `/docs` – Link to master documentation  
-- `/hardware` – Detected system info  
-- `/contact` – Contact information
-
-### Admin Routes (session‑authenticated)
-
-- `/admin/dashboard` – Gateway overview (uptime, clients, DNS block rate, etc.)  
-- `/admin/clients` – DHCP lease table with MAC/IP/hostname  
-- `/admin/dns` – AdGuard Home statistics (queries, blocks, top domains)  
-- `/admin/firewall` – Human‑readable iptables policy view  
-- `/admin/network` – Interfaces, routes, listening ports, Tailscale status
-
-Authentication uses environment‑based credentials with HMAC comparison, session timeout, login lockout, and CSRF protection.
-
-> **Note**: IDS/log investigation is handled exclusively by Wazuh as of v2.2 to avoid maintaining a duplicate alert viewer.
 
 ---
 
