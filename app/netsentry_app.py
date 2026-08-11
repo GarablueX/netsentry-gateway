@@ -173,9 +173,15 @@ def run_cmd(command, timeout=4):
 def read_jsonl_tail(path, limit=200):
     if not path.exists():
         return []
-    lines = path.read_text(errors="ignore").splitlines()
+    try:
+        # Use a more memory-efficient approach to read the tail
+        lines = subprocess.check_output(["tail", "-n", str(limit), str(path)], stderr=subprocess.DEVNULL).decode(errors="ignore").splitlines()
+    except Exception:
+        # Fallback for systems without tail or other errors
+        lines = path.read_text(errors="ignore").splitlines()[-limit:]
+
     items = []
-    for line in lines[-limit:]:
+    for line in lines:
         line = line.strip()
         if not line:
             continue
@@ -189,7 +195,10 @@ def read_jsonl_tail(path, limit=200):
 def read_text_tail(path, limit=200):
     if not path.exists():
         return []
-    return path.read_text(errors="ignore").splitlines()[-limit:]
+    try:
+        return subprocess.check_output(["tail", "-n", str(limit), str(path)], stderr=subprocess.DEVNULL).decode(errors="ignore").splitlines()
+    except Exception:
+        return path.read_text(errors="ignore").splitlines()[-limit:]
 
 
 def read_jsonl(path, limit=None):
@@ -1010,7 +1019,10 @@ def admin_login():
                 session["login_time"] = datetime.now().timestamp()
                 session["csrf_token"] = secrets.token_urlsafe(32)
                 LOGIN_FAILURES.pop(ip, None)
-                return redirect(request.args.get("next") or url_for("admin_dashboard"))
+                next_url = request.args.get("next")
+                if next_url and next_url.startswith("/") and not next_url.startswith("//"):
+                    return redirect(next_url)
+                return redirect(url_for("admin_dashboard"))
             record_login_failure(ip)
             error = "Invalid username or password."
     return render_template("admin/login.html", title="Login", subtitle="Admin authentication", error=error, csrf_token=csrf_token())
