@@ -1,6 +1,6 @@
-interface=wlx200db0220b9a
+interface='your interface'
 driver=nl80211
-ssid=NetSentry-Test
+ssid='your ssid'
 hw_mode=g
 channel=6
 ieee80211n=1
@@ -9,6 +9,6 @@ auth_algs=1
 ignore_broadcast_ssid=0
 
 wpa=2
-wpa_passphrase=netsentry233
+wpa_passphrase='your password'
 wpa_key_mgmt=WPA-PSK
 rsn_pairwise=CCMP
