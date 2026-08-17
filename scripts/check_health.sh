@@ -1,30 +1,17 @@
 #!/usr/bin/env bash
-set -euo pipefail 
+set -euo pipefail
 
+echo "┏━━━━━━━━━━━━━━━━━━━━"
+echo "┃ Checking services"
+echo "┣━━━━━━━━━━━━━━━━━━━━"
 
-echo "Checking services"
-echo "[+][+][+][+][+][+][+][+][+][+][+][+]"
-echo "[+] Checking Suricata, 3 Wazuh, Filebeat, Tailscale"
+for svc in suricata wazuh-manager wazuh-indexer wazuh-dashboard filebeat tailscaled \
+           netsentry_dnsmasq.service netsentry_firewall.service netsentry_web.service netsentry_hostapd.service
+do
+    echo -n "┃ $svc … "
+    sudo systemctl is-active --quiet "$svc" && echo "active" || echo "inactive"
+done
 
-sudo systemctl is-active suricata 
-sudo systemctl is-active wazuh-manager
-sudo systemctl is-active wazuh-indexer
-sudo systemctl is-active wazuh-dashboard
-sudo systemctl is-active filebeat 
-sudo systemctl is-active tailscaled
-
-echo "[+][+][+][+][+][+][+][+][+][+][+][+]"
-echo "[+] Checking netsentry services"
-
-sudo systemctl is-active netsentry_dnsmasq.service
-sudo systemctl is-active netsentry_firewall.service
-sudo systemctl is-active netsentry_web.service
-sudo systemctl is-active netsentry_hostapd.service
-
-echo "[+][+][+][+][+][+][+][+][+][+][+][+]"
-echo "[+] Hardware status "
-
-sudo free -h 
-
-
-
+echo "┗━━━━━━━━━━━━━━━━━━━━"
+echo "× Hardware status"
+sudo free -h
