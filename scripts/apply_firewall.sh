@@ -91,27 +91,7 @@ sudo iptables -A INPUT -p tcp  -s "$HOME_LAN" --dport 53 -j ACCEPT
 
 sudo iptables -A INPUT -i "$AP_I"  -p udp --sport 68 --dport 67 -j  ACCEPT 
 
-#netsentry portal from both lans 
 
-#sudo iptables -A INPUT -p tcp -s "$HOME_LAN" --dport 5500 -j ACCEPT 
-
-#sudo iptables -A INPUT -p tcp -s "$AP_NET" --dport 5500 -j ACCEPT
-
-#HOney pot for both lans 
-
-#sudo iptables -A INPUT -p tcp -s "$HOME_LAN" --dport 8082 -j ACCEPT
-
-#sudo iptables -A INPUT -p tcp -s "$AP_NET" --dport 8082 -j ACCEPT
-
-# STATUS_API for both lans  
-
-#sudo iptables -A INPUT -p tcp -s "$HOME_LAN" --dport 5051 -j ACCEPT
-
-#sudo iptables -A INPUT -p tcp -s "$AP_NET" --dport 5051 -j ACCEPT
-
-# ADMIN ONLY SERVICES  
-
-#sudo iptables -A INPUT -p tcp -s "$ADMIN_IP" --dport 5050 -j ACCEPT
 
 sudo iptables -A INPUT -p tcp -s "$ADMIN_IP" --dport 3001 -j ACCEPT
 
