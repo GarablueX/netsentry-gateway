@@ -3,7 +3,7 @@ set -euo pipefail
 
 TAILSCALE_I="tailscale0"
 TAILSCALE_NET="100.64.0.0/10"
-ADMIN_IP="192.168.1.5"
+ADMIN_IP="192.168.1.7"
 HOME_LAN="192.168.1.0/24"
 AP_NET="10.10.10.0/24"
 WAN_I="enp3s0"
@@ -114,6 +114,15 @@ sudo iptables -A INPUT -p tcp -s "$AP_NET" --dport 443 -j ACCEPT
 sudo iptables -A INPUT -i "$TAILSCALE_I" -s "$TAILSCALE_NET" -p tcp --dport 22 -j ACCEPT
 sudo iptables -A INPUT -i "$TAILSCALE_I" -s "$TAILSCALE_NET" -p tcp --dport 80 -j ACCEPT
 sudo iptables -A INPUT -i "$TAILSCALE_I" -s "$TAILSCALE_NET" -p tcp --dport 443 -j ACCEPT
+
+#  only allow DNS from the netsentry itself
+sudo iptables -A INPUT -p udp --dport 53 -s "$AP_NET" -d 192.168.1.19 -j ACCEPT
+sudo iptables -A INPUT -p tcp --dport 53 -s "$AP_NET" -d 10.10.10.1 -j ACCEPT
+
+#deny all dns not from the netsentry 
+
+sudo iptables -A INPUT -p udp --dport 53 -s "$AP_NET" -j ACCEPT
+sudo iptables -A INPUT -p tcp --dport 53 -s "$AP_NET" -j ACCEPT
 
 
 
