@@ -1,0 +1,124 @@
+# NetSentry Gateway - CVM Configuration Example
+# Copy this to config/vars.yml on the CVM and update values for your environment
+#
+# IMPORTANT: Interface names MUST be updated to match the CVM's actual interfaces!
+# Run `ip link show` on the CVM to find the correct interface names.
+
+network:
+  # WAN interface (connected to internet/upstream router)
+  # On Azure CVM, typically: eth0, ens3, or similar
+  wan_interface: "eth0"
+
+  # LAN/AP interface (WiFi AP or wired LAN)
+  # On CVM with WiFi dongle: wlx<MAC> or wlan0
+  # On CVM without WiFi: use a second NIC like eth1, ens4
+  lan_interface: "eth1"
+  ap_interface: "eth1"
+
+  # Home LAN subnet (upstream network)
+  home_lan: "192.168.1.0/24"
+
+  # AP LAN subnet (NetSentry managed network)
+  ap_lan: "10.10.10.0/24"
+
+  # NetSentry IP on home LAN
+  netsentry_home_ip: "192.168.1.19"
+
+  # NetSentry IP on AP LAN (gateway for AP clients)
+  netsentry_ap_ip: "10.10.10.1"
+
+  # Admin workstation IP (allowed full management access)
+  admin_ip: "192.168.1.7"
+
+  # Tailscale interface (created by tailscaled)
+  tailscale_interface: "tailscale0"
+  tailscale_net: "100.64.0.0/10"
+
+  # WiFi SSID (if using AP mode)
+  ssid: "NetSentry_AP"
+
+services:
+  adguard_url: "http://192.168.1.19:3001"
+  adguard_user: "GBX"
+  adguard_password: "CHANGE_ME"  # Use secrets management in production
+  wazuh_manager_port: "8443"
+  nginx_http_port: "80"
+  nginx_https_port: "443"
+
+dhcp:
+  start_range: "10.10.10.50"
+  end_range: "10.10.10.150"
+  netmask: "255.255.255.0"
+  lease_time: "12h"
+  gateway: "10.10.10.1"
+  dns_server: "10.10.10.1"
+
+wifi:
+  driver: "nl80211"
+  hw_mode: "g"
+  channel: 6
+  ieee80211n: 1
+  wmm_enabled: 1
+  auth_algs: 1
+  ignore_broadcast_ssid: 0
+  wpa: 2
+  wpa_key_mgmt: "WPA-PSK"
+  rsn_pairwise: "CCMP"
+  wpa_passphrase: "CHANGE_ME"  # Use secrets management in production
+
+paths:
+  base_dir: "/home/azureuser/netsentry-gateway"
+  certs_dir: "/etc/netsentry/certs"
+  logs_dir: "/var/log"
+  suricata_logs_dir: "/var/log/suricata"
+  dnsmasq_lease_dir:
+    - "/var/lib/misc/dnsmasq.leases"
+    - "/var/lib/misc/dnsmasq-netsentry.leases"
+    - "/run/dnsmasq/dnsmasq.leases"
+    - "/tmp/dnsmasq.leases"
+
+firewall:
+  ssh_port: "22"
+  ftp_port: "21"
+  ftp_pass_range: "40000-40100"
+  adguard_ui_port: "3001"
+  http_port: "80"
+  https_port: "443"
+
+web:
+  admin_user: "GarablueX"
+  admin_password: "CHANGE_ME"  # Use secrets management in production
+  session_timeout: "13300"
+
+systemd:
+  user: "azureuser"
+  group: "azureuser"
+
+suricata:
+  home_net: "{{ network.home_lan }}"
+  ap_net: "{{ network.ap_lan }}"
+  admin_ip: "{{ network.admin_ip }}"
+  netsentry_home_ip: "{{ network.netsentry_home_ip }}"
+  netsentry_ap_ip: "{{ network.netsentry_ap_ip }}"
+  external_net: "!{{ network.home_lan }},!{{ network.ap_lan }},!{{ network.admin_ip }},!{{ network.netsentry_home_ip }},!{{ network.netsentry_ap_ip }}"
+
+nginx:
+  server_names:
+    - "netsentry.local"
+    - "netsentry.lan"
+    - "ap.lan"
+    - "{{ network.netsentry_home_ip }}"
+    - "{{ network.netsentry_ap_ip }}"
+    - "_"
+  admin_allowed_ips:
+    - "{{ network.admin_ip }}/32"
+    - "{{ network.ap_lan }}"
+  api_allowed_ips:
+    - "{{ network.admin_ip }}/32"
+    - "{{ network.ap_lan }}"
+    - "{{ network.home_lan }}"
+
+internet_probe:
+  host: "1.1.1.1"
+  port: "53"
+  timeout: "2"

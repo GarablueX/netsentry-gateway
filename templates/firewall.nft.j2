@@ -2,31 +2,31 @@
 flush ruleset
 
 table inet netsentry {
-    set admin_ip = {
+    set admin_ip  {
         type ipv4_addr
         elements = { {{ network.admin_ip }} }
     }
-    set home_lan = {
+    set home_lan  {
         type ipv4_addr
         elements = { {{ network.home_lan }} }
     }
 
-    set ap_lan = {
+    set ap_lan  {
         type ipv4_addr
         elements = { {{ network.ap_lan }} }
     }
 
-    set netsentry_ips = {
+    set netsentry_ips  {
         type ipv4_addr
         elements = { {{ network.netsentry_home_ip }}, {{ network.netsentry_ap_ip }} }
     }
     
-    set tailscale_net = {
+    set tailscale_net  {
         type ipv4_addr
         elements = { {{ network.tailscale_net }} }
     }
 
-    set allowed_admin_ports = {
+    set allowed_admin_ports  {
         type inet_service
         elements = {  
             {{ firewall.ssh_port }},
@@ -36,7 +36,7 @@ table inet netsentry {
         }
     }
 
-    set allowed_ports = {
+    set allowed_ports  {
         type inet_service
         elements = {  
             {{ firewall.ssh_port }},
@@ -45,7 +45,7 @@ table inet netsentry {
         }
     }
 
-    set web_ports = {
+    set web_ports  {
         type inet_service
         elements = {  
             {{ firewall.http_port }},
@@ -122,35 +122,4 @@ table inet netsentry {
         
         ip saddr @ap_lan oifname "{{ network.wan_interface }}" masquerade
     }
-
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 }

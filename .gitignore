@@ -87,3 +87,7 @@ eve.json
 fast.log
 stats.log
 suricata.log
+
+# Generated firewall configs
+firewall.rendered.nft
+*.rendered.nft
