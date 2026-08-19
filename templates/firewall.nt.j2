@@ -1,0 +1,156 @@
+#!/usr/sbin/nft -f
+flush ruleset
+
+table inet netsentry {
+    set admin_ip = {
+        type ipv4_addr
+        elements = { {{ network.admin_ip }} }
+    }
+    set home_lan = {
+        type ipv4_addr
+        elements = { {{ network.home_lan }} }
+    }
+
+    set ap_lan = {
+        type ipv4_addr
+        elements = { {{ network.ap_lan }} }
+    }
+
+    set netsentry_ips = {
+        type ipv4_addr
+        elements = { {{ network.netsentry_home_ip }}, {{ network.netsentry_ap_ip }} }
+    }
+    
+    set tailscale_net = {
+        type ipv4_addr
+        elements = { {{ network.tailscale_net }} }
+    }
+
+    set allowed_admin_ports = {
+        type inet_service
+        elements = {  
+            {{ firewall.ssh_port }},
+            {{ firewall.http_port }},
+            {{ firewall.https_port }},
+            {{ firewall.adguard_ui_port }},
+        }
+    }
+
+    set allowed_ports = {
+        type inet_service
+        elements = {  
+            {{ firewall.ssh_port }},
+            {{ firewall.http_port }},
+            {{ firewall.https_port }},
+        }
+    }
+
+    set web_ports = {
+        type inet_service
+        elements = {  
+            {{ firewall.http_port }},
+            {{ firewall.https_port }},        
+            
+        }
+    }
+
+    ## chains 
+
+    chain input {
+        type filter hook input priority 0; policy drop;
+        ct state established,related accept
+        ct state invalid drop
+        iifname "lo" accept
+
+        #ICMP from lans 
+
+        ip protocol icmp ip saddr @home_lan accept
+        ip protocol icmp ip saddr @ap_lan accept
+
+        # allow admin access 
+        ip saddr @admin_ip tcp dport @allowed_admin_ports accept
+
+        #tailscale admin access 
+        iifname "{{ network.tailscale_interface }}" ip saddr @tailscale_net tcp dport {
+            {{ firewall.ssh_port }},
+            {{ firewall.http_port }},
+            {{ firewall.https_port }}
+        } accept
+
+        ip saddr @ap_lan udp dport 53 accept
+        ip saddr @ap_lan tcp dport 53 accept
+        
+        iifname "{{ network.ap_interface }}" udp sport 68 dport 67 accept
+
+        # web frontend 
+
+        ip saddr @home_lan tcp dport @web_ports accept
+        ip saddr @ap_lan tcp dport @web_ports accept
+        
+        # log drops 
+        limit rate 6/minute burst 10 packets log prefix "nftables input drop: " level info
+
+        #default drop 
+    }
+
+    chain forward {
+     type filter hook forward priority 0; policy drop;
+
+     #inter vlan, home to lan 
+     iifname "{{ network.wan_interface }}" oifname "{{ network.ap_interface }}" \
+        ip saddr @home_lan ip daddr @ap_lan accept
+
+     #inter vlan, lan to home 
+     iifname "{{ network.ap_interface }}" oifname "{{ network.wan_interface }}" \
+        ip saddr @ap_lan ip daddr @home_lan accept       
+    #ap lan to internet 
+     iifname "{{ network.wan_interface }}" oifname "{{ network.ap_interface }}" \
+        ip saddr @ap_lan accept
+    
+    #retun traffic 
+    iifname "{{ network.ap_interface }}" oifname "{{ network.wan_interface }}" \
+        ip saddr @ap_lan ct state established,related accept
+    
+    #log drops 
+    limit rate 6/minute burst 10 packets log prefix "NETSENTRY_FW_FORWARD_DROP " level info
+    }
+    
+
+    chain postrouting {
+        type nat hook postrouting priority 100; policy accept;
+        ip saddr @ap_lan ip daddr @home_lan return
+        
+        ip saddr @ap_lan oifname "{{ network.wan_interface }}" masquerade
+    }
+
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+}
