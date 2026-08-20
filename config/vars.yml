@@ -1,6 +1,5 @@
 network:
  wan_interface: "enp0s3"
- lan_interface: "wlx200db0220b9a"
  ap_interface: "wlx200db0220b9a"
  home_lan: "192.168.1.0/24"
  ap_lan: "10.10.10.0/24"
