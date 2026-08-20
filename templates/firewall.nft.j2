@@ -1,4 +1,5 @@
 #!/usr/sbin/nft -f
+
 flush ruleset
 
 table inet netsentry {
@@ -123,3 +124,5 @@ table inet netsentry {
         ip saddr @ap_lan oifname "{{ network.wan_interface }}" masquerade
     }
 }
+
+net.ipv4.ip_forward = 1
