@@ -1,6 +1,6 @@
 
 - name: Configure Netsentry nftables firewall 
-  hossts: localhost 
+  hosts: localhost 
   connection: local 
   become: true 
 
