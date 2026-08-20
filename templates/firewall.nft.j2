@@ -83,7 +83,7 @@ table inet netsentry {
         ip saddr @ap_lan udp dport 53 accept
         ip saddr @ap_lan tcp dport 53 accept
         
-        iifname "{{ network.ap_interface }}" udp sport 68 dport 67 accept
+        iifname "{{ network.ap_interface }}" udp sport 68 udp dport 67 accept
 
         # web frontend 
 
