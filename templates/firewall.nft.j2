@@ -105,11 +105,11 @@ table inet netsentry {
      iifname "{{ network.ap_interface }}" oifname "{{ network.wan_interface }}" \
         ip saddr @ap_lan ip daddr @home_lan accept       
     #ap lan to internet 
-     iifname "{{ network.wan_interface }}" oifname "{{ network.ap_interface }}" \
-        ip saddr @ap_lan accept
+     iifname "{{ network.ap_interface }}" oifname "{{ network.wan_interface }}" \
+         ip saddr @ap_lan accept
     
     #retun traffic 
-    iifname "{{ network.ap_interface }}" oifname "{{ network.wan_interface }}" \
+    iifname "{{ network.wan_interface }}" oifname "{{ network.wan_interface }}" \
         ip saddr @ap_lan ct state established,related accept
     
     #log drops 
@@ -124,5 +124,3 @@ table inet netsentry {
         ip saddr @ap_lan oifname "{{ network.wan_interface }}" masquerade
     }
 }
-
-net.ipv4.ip_forward = 1
