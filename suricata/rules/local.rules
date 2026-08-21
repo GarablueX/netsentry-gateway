@@ -1,7 +1,7 @@
 
-alert icmp !$ADMIN_IP any -> $NETSENTRY_GATEWAY any (msg:"ICMP echo request from non-admin"; itype:8 priority:3 ;; sid:10000001; rev:4;)
+alert icmp !$ADMIN_IP any -> $NETSENTRY_GATEWAY any (msg:"ICMP echo request from non-admin"; itype:8; priority:3 ; sid:10000001; rev:4;)
 
-alert tcp !$ADMIN_IP any -> $NETSENTRY_GATEWAY 22 (msg:"SSH brute-force threshold from non-admin"; flags:S; detection_filter:track by_src, count 10, seconds 60 priority:1 ;; sid:10000002; rev:4;)
+alert tcp !$ADMIN_IP any -> $NETSENTRY_GATEWAY 22 (msg:"SSH brute-force threshold from non-admin"; flags:S; detection_filter:track by_src, count 10, seconds 60; priority:1 ; sid:10000002; rev:4;)
 
 ## alert tcp !$ADMIN_IP any -> $NETSENTRY_GATEWAY 22 (msg:"SSH connection attempt from non-admin"; flags:S,CE; sid:10000003; rev:3;)
 
