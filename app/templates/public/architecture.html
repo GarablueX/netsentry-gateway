@@ -11,7 +11,6 @@ Debian gateway core
   ├── AdGuard DNS filtering
   ├── iptables firewall + NAT
   ├── Snort IDS alert pipeline
-  ├── honeypot/test logs
   └── Flask dashboard behind Nginx
   ↓
 WAN/HOME interface: {{ wan_interface }} / {{ home_ip }}
@@ -49,7 +48,7 @@ Flask App :5000 on 127.0.0.1 only
     <tr><td>Snort <code>alerts.jsonl</code></td><td>IDS alert table and filters</td></tr>
     <tr><td>iptables helper</td><td>Human-readable firewall matrix and raw rules</td></tr>
     <tr><td>Linux commands</td><td>Interfaces, routes, services, ports, system status</td></tr>
-    <tr><td>JSONL/text logs</td><td>Honeypot, portal, HTTP test, app, agent, Snort fast logs</td></tr>
+    <tr><td>JSONL/text logs</td><td>App, agent, Snort fast logs</td></tr>
   </table>
 </div>
 

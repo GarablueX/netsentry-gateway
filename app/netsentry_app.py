@@ -69,11 +69,7 @@ IDS_LATEST_REV3_JSON = BASE_DIR / "data/ids/latest_rev3.json"
 
 ALERTS_JSONL = IDS_ALERTS_JSONL
 ALERT_FAST = BASE_DIR / "snort/alerts/alert_fast.txt"
-
-HONEYPOT_LOG = BASE_DIR / "logs/honeypot_lite_attempts.jsonl"
-HTTP_TEST_LOG = BASE_DIR / "logs/http_test_service_access.jsonl"
 PORTAL_AUTH_LOG = BASE_DIR / "logs/portal_auth_attempts.jsonl"
-PORTAL_DECOY_LOG = BASE_DIR / "logs/portal_decoy_attempts.jsonl"
 APP_LOG = BASE_DIR / "logs/netsentry_app.log"
 AGENT_LOG = BASE_DIR / "logs/agent.log"
 
@@ -614,7 +610,7 @@ def get_firewall_data():
         {"category": "Nginx HTTPS", "source": f"{HOME_LAN} + {AP_LAN}", "ports": "TCP 443", "purpose": "HTTPS frontend", "ok": text_has(input_text, HOME_LAN, "tcp dpt:443") and text_has(input_text, AP_LAN, "tcp dpt:443")},
         {"category": "Legacy Portal", "source": f"{HOME_LAN} + {AP_LAN}", "ports": "TCP 5500", "purpose": "Old portal during migration", "ok": text_has(input_text, HOME_LAN, "tcp dpt:5500") and text_has(input_text, AP_LAN, "tcp dpt:5500")},
         {"category": "Legacy Status API", "source": f"{HOME_LAN} + {AP_LAN}", "ports": "TCP 5051", "purpose": "Old status service during migration", "ok": text_has(input_text, HOME_LAN, "tcp dpt:5051") and text_has(input_text, AP_LAN, "tcp dpt:5051")},
-        {"category": "Honeypot", "source": f"{HOME_LAN} + {AP_LAN}", "ports": "TCP 8082", "purpose": "Decoy service", "ok": text_has(input_text, HOME_LAN, "tcp dpt:8082") and text_has(input_text, AP_LAN, "tcp dpt:8082")},        {"category": "AdGuard UI", "source": ADMIN_IP, "ports": "TCP 3001", "purpose": "AdGuard admin UI", "ok": text_has(input_text, ADMIN_IP, "tcp dpt:3001")},        {"category": "FTP", "source": ADMIN_IP, "ports": "TCP 21 + 40000:40100", "purpose": "Admin-only FTP", "ok": text_has(input_text, ADMIN_IP, "tcp dpt:21") and "tcp dpts:40000:40100" in input_text},
+        {"category": "AdGuard UI", "source": ADMIN_IP, "ports": "TCP 3001", "purpose": "AdGuard admin UI", "ok": text_has(input_text, ADMIN_IP, "tcp dpt:3001")},        {"category": "FTP", "source": ADMIN_IP, "ports": "TCP 21 + 40000:40100", "purpose": "Admin-only FTP", "ok": text_has(input_text, ADMIN_IP, "tcp dpt:21") and "tcp dpts:40000:40100" in input_text},
     ]
     policy = [
         {"name": "Established traffic", "description": "Replies to established connections are accepted.", "ok": "RELATED,ESTABLISHED" in input_text},
@@ -862,32 +858,6 @@ def summarize_log_entry(source, entry):
         "event": event,
         "body": body,
     }
-
-
-def get_logs_data(limit=300):
-    sources = {
-        "honeypot": read_jsonl_tail(HONEYPOT_LOG, limit=limit),
-        "http_test": read_jsonl_tail(HTTP_TEST_LOG, limit=limit),
-        "portal_auth": read_jsonl_tail(PORTAL_AUTH_LOG, limit=limit),
-        "portal_decoy": read_jsonl_tail(PORTAL_DECOY_LOG, limit=limit),
-        "app": read_text_tail(APP_LOG, limit=limit),
-        "agent": read_text_tail(AGENT_LOG, limit=limit),
-        "snort_fast": read_text_tail(ALERT_FAST, limit=limit),
-    }
-    source_filter = request.args.get("source", "").strip()
-    q = request.args.get("q", "").strip()
-    rows = []
-    counts = {}
-    for source, entries in sources.items():
-        counts[source] = len(entries)
-        if source_filter and source != source_filter:
-            continue
-        for entry in entries:
-            row = summarize_log_entry(source, entry)
-            if q and not contains_ci(" ".join(str(v) for v in row.values()), q):
-                continue
-            rows.append(row)
-    return {"rows": rows[-limit:], "counts": counts, "source_filter": source_filter, "query": q, "available_sources": list(sources.keys())}
 
 
 
