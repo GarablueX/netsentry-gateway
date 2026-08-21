@@ -29,6 +29,7 @@ Open ports:
 - 53/tcp DNS
 - 3001/tcp AdGuard web UI
 
+
 ## Interpretation
 AdGuard DNS filtering is working. The Debian machine is now acting as a DNS filtering server for the test client. The system attack surface increased after installing AdGuard, so later firewall rules should restrict AdGuard web UI access to the admin PC only.
 
