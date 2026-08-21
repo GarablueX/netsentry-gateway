@@ -41,7 +41,7 @@ alert tcp $AP_LAN any -> 10.10.10.1 22 (msg:"SSH brute-force threshold from AP c
 
 alert ssh any any -> any 22 (msg:"SSH protocol version 1 detected"; flow:to_server,established; ssh.proto; content:"1."; startswith;priority:3; sid:100000115; rev:3;)
 
-alert ftp any any -> $NETSENTRY_GATEWAY 21 (msg:"FTP anonymous login attempt detected"; flow:to_server,established; ftp.command; content:"USER"; ftp.command_data; content:"anonymous"; nocase;priority:3; sid:100000116; rev:3;)
+alert ftp any any -> $NETSENTRY_GATEWAY 21 (msg:"FTP anonymous login attempt detected"; flow:to_server,established; content:"USER"; nocase; content:"anonymous"; nocase;priority:3; sid:100000116; rev:3;)
 
 alert ftp any any -> any 21 (msg:"FTP traffic detected"; flow:to_server; sid:100000117;priority:3; rev:2;)
 
