@@ -95,3 +95,4 @@ firewall.rendered.nft
 !tests/cases/**/*.pcap
 !tests/cases/**/*.jsonl
 !tests/cases/**/*.log
+!tests/cases/**/*.json
