@@ -21,9 +21,9 @@
         state: present
         sysctl_file: /etc/sysctl.d/99-netsentry.conf
     
-    - name:
+    - name: install nftables configuration file
       ansible.builtin.template:
-        src: ../config/nftables.conf.j2
+        src: ../templates/firewall.nft.j2
         dest: /etc/nftables.conf
         owner: root
         group: root
