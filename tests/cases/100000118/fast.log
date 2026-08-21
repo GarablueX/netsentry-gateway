@@ -1,0 +1,6 @@
+11/14/2023-23:13:22.500000  [**] [1:100000101:4] TCP SYN burst detected [**] [Classification: (null)] [Priority: 1] {TCP} 10.10.10.50:48050 -> 10.10.10.1:50000
+11/14/2023-23:13:22.500000  [**] [1:100000118:3] AP client horizontal SYN scan detected [**] [Classification: (null)] [Priority: 3] {TCP} 10.10.10.50:48050 -> 10.10.10.1:50000
+11/14/2023-23:13:22.500000  [**] [1:100000101:4] TCP SYN burst detected [**] [Classification: (null)] [Priority: 1] {TCP} 10.10.10.50:48050 -> 10.10.10.1:50000
+11/14/2023-23:13:22.500000  [**] [1:100000118:3] AP client horizontal SYN scan detected [**] [Classification: (null)] [Priority: 3] {TCP} 10.10.10.50:48050 -> 10.10.10.1:50000
+11/14/2023-23:13:22.250000  [**] [1:100000101:4] TCP SYN burst detected [**] [Classification: (null)] [Priority: 1] {TCP} 10.10.10.50:48045 -> 10.10.10.1:50000
+11/14/2023-23:13:22.250000  [**] [1:100000118:3] AP client horizontal SYN scan detected [**] [Classification: (null)] [Priority: 3] {TCP} 10.10.10.50:48045 -> 10.10.10.1:50000

@@ -1,0 +1,3 @@
+11/14/2023-23:13:20.000000  [**] [1:10000008:3] Non-admin request containing /admin in URI [**] [Classification: (null)] [Priority: 2] {TCP} 192.168.1.60:42008 -> 10.10.10.1:80
+11/14/2023-23:13:20.000000  [**] [1:10000008:3] Non-admin request containing /admin in URI [**] [Classification: (null)] [Priority: 2] {TCP} 192.168.1.60:42008 -> 10.10.10.1:80
+11/14/2023-23:13:20.000000  [**] [1:10000008:3] Non-admin request containing /admin in URI [**] [Classification: (null)] [Priority: 2] {TCP} 192.168.1.60:42008 -> 10.10.10.1:80

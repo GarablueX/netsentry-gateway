@@ -1,0 +1,6 @@
+11/14/2023-23:13:20.000000  [**] [1:100000108:3] Large ICMP echo payload detected [**] [Classification: (null)] [Priority: 2] {ICMP} 192.168.1.60:8 -> 10.10.10.1:0
+11/14/2023-23:13:20.000000  [**] [1:10000001:4] ICMP echo request from non-admin [**] [Classification: (null)] [Priority: 3] {ICMP} 192.168.1.60:8 -> 10.10.10.1:0
+11/14/2023-23:13:20.000000  [**] [1:100000108:3] Large ICMP echo payload detected [**] [Classification: (null)] [Priority: 2] {ICMP} 192.168.1.60:8 -> 10.10.10.1:0
+11/14/2023-23:13:20.000000  [**] [1:10000001:4] ICMP echo request from non-admin [**] [Classification: (null)] [Priority: 3] {ICMP} 192.168.1.60:8 -> 10.10.10.1:0
+11/14/2023-23:13:20.000000  [**] [1:100000108:3] Large ICMP echo payload detected [**] [Classification: (null)] [Priority: 2] {ICMP} 192.168.1.60:8 -> 10.10.10.1:0
+11/14/2023-23:13:20.000000  [**] [1:10000001:4] ICMP echo request from non-admin [**] [Classification: (null)] [Priority: 3] {ICMP} 192.168.1.60:8 -> 10.10.10.1:0

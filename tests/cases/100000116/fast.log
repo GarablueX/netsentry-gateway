@@ -1,0 +1,4 @@
+11/14/2023-23:13:20.000000  [**] [1:100000117:2] FTP traffic detected [**] [Classification: (null)] [Priority: 3] {TCP} 192.168.1.60:42116 -> 10.10.10.1:21
+11/14/2023-23:13:20.000000  [**] [1:100000117:2] FTP traffic detected [**] [Classification: (null)] [Priority: 3] {TCP} 192.168.1.60:42116 -> 10.10.10.1:21
+11/14/2023-23:13:20.000000  [**] [1:100000116:3] FTP anonymous login attempt detected [**] [Classification: (null)] [Priority: 3] {TCP} 192.168.1.60:42116 -> 10.10.10.1:21
+11/14/2023-23:13:20.000000  [**] [1:100000117:2] FTP traffic detected [**] [Classification: (null)] [Priority: 3] {TCP} 192.168.1.60:42116 -> 10.10.10.1:21

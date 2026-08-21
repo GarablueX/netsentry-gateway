@@ -1,0 +1,6 @@
+11/14/2023-23:13:25.000000  [**] [1:10000002:4] SSH brute-force threshold from non-admin [**] [Classification: (null)] [Priority: 1] {TCP} 10.10.10.50:47010 -> 10.10.10.1:22
+11/14/2023-23:13:25.000000  [**] [1:100000114:4] SSH brute-force threshold from AP client [**] [Classification: (null)] [Priority: 1] {TCP} 10.10.10.50:47010 -> 10.10.10.1:22
+11/14/2023-23:13:23.500000  [**] [1:10000002:4] SSH brute-force threshold from non-admin [**] [Classification: (null)] [Priority: 1] {TCP} 10.10.10.50:47007 -> 10.10.10.1:22
+11/14/2023-23:13:23.500000  [**] [1:100000114:4] SSH brute-force threshold from AP client [**] [Classification: (null)] [Priority: 1] {TCP} 10.10.10.50:47007 -> 10.10.10.1:22
+11/14/2023-23:13:24.500000  [**] [1:10000002:4] SSH brute-force threshold from non-admin [**] [Classification: (null)] [Priority: 1] {TCP} 10.10.10.50:47009 -> 10.10.10.1:22
+11/14/2023-23:13:24.500000  [**] [1:100000114:4] SSH brute-force threshold from AP client [**] [Classification: (null)] [Priority: 1] {TCP} 10.10.10.50:47009 -> 10.10.10.1:22

@@ -1,0 +1,36 @@
+11/14/2023-23:13:20.000000  [**] [1:10000001:4] ICMP echo request from non-admin [**] [Classification: (null)] [Priority: 3] {ICMP} 192.168.1.60:8 -> 10.10.10.1:0
+11/14/2023-23:13:20.200000  [**] [1:10000001:4] ICMP echo request from non-admin [**] [Classification: (null)] [Priority: 3] {ICMP} 192.168.1.60:8 -> 10.10.10.1:0
+11/14/2023-23:13:20.400000  [**] [1:10000001:4] ICMP echo request from non-admin [**] [Classification: (null)] [Priority: 3] {ICMP} 192.168.1.60:8 -> 10.10.10.1:0
+11/14/2023-23:13:20.600000  [**] [1:10000001:4] ICMP echo request from non-admin [**] [Classification: (null)] [Priority: 3] {ICMP} 192.168.1.60:8 -> 10.10.10.1:0
+11/14/2023-23:13:20.800000  [**] [1:10000001:4] ICMP echo request from non-admin [**] [Classification: (null)] [Priority: 3] {ICMP} 192.168.1.60:8 -> 10.10.10.1:0
+11/14/2023-23:13:21.000000  [**] [1:10000001:4] ICMP echo request from non-admin [**] [Classification: (null)] [Priority: 3] {ICMP} 192.168.1.60:8 -> 10.10.10.1:0
+11/14/2023-23:13:21.200000  [**] [1:10000001:4] ICMP echo request from non-admin [**] [Classification: (null)] [Priority: 3] {ICMP} 192.168.1.60:8 -> 10.10.10.1:0
+11/14/2023-23:13:21.400000  [**] [1:10000001:4] ICMP echo request from non-admin [**] [Classification: (null)] [Priority: 3] {ICMP} 192.168.1.60:8 -> 10.10.10.1:0
+11/14/2023-23:13:21.600000  [**] [1:10000001:4] ICMP echo request from non-admin [**] [Classification: (null)] [Priority: 3] {ICMP} 192.168.1.60:8 -> 10.10.10.1:0
+11/14/2023-23:13:21.800000  [**] [1:10000001:4] ICMP echo request from non-admin [**] [Classification: (null)] [Priority: 3] {ICMP} 192.168.1.60:8 -> 10.10.10.1:0
+11/14/2023-23:13:22.000000  [**] [1:100000107:4] ICMP echo sweep detected [**] [Classification: (null)] [Priority: 1] {ICMP} 192.168.1.60:8 -> 10.10.10.1:0
+11/14/2023-23:13:22.000000  [**] [1:10000001:4] ICMP echo request from non-admin [**] [Classification: (null)] [Priority: 3] {ICMP} 192.168.1.60:8 -> 10.10.10.1:0
+11/14/2023-23:13:20.000000  [**] [1:10000001:4] ICMP echo request from non-admin [**] [Classification: (null)] [Priority: 3] {ICMP} 192.168.1.60:8 -> 10.10.10.1:0
+11/14/2023-23:13:20.200000  [**] [1:10000001:4] ICMP echo request from non-admin [**] [Classification: (null)] [Priority: 3] {ICMP} 192.168.1.60:8 -> 10.10.10.1:0
+11/14/2023-23:13:20.400000  [**] [1:10000001:4] ICMP echo request from non-admin [**] [Classification: (null)] [Priority: 3] {ICMP} 192.168.1.60:8 -> 10.10.10.1:0
+11/14/2023-23:13:20.600000  [**] [1:10000001:4] ICMP echo request from non-admin [**] [Classification: (null)] [Priority: 3] {ICMP} 192.168.1.60:8 -> 10.10.10.1:0
+11/14/2023-23:13:20.800000  [**] [1:10000001:4] ICMP echo request from non-admin [**] [Classification: (null)] [Priority: 3] {ICMP} 192.168.1.60:8 -> 10.10.10.1:0
+11/14/2023-23:13:21.000000  [**] [1:10000001:4] ICMP echo request from non-admin [**] [Classification: (null)] [Priority: 3] {ICMP} 192.168.1.60:8 -> 10.10.10.1:0
+11/14/2023-23:13:21.200000  [**] [1:10000001:4] ICMP echo request from non-admin [**] [Classification: (null)] [Priority: 3] {ICMP} 192.168.1.60:8 -> 10.10.10.1:0
+11/14/2023-23:13:21.400000  [**] [1:10000001:4] ICMP echo request from non-admin [**] [Classification: (null)] [Priority: 3] {ICMP} 192.168.1.60:8 -> 10.10.10.1:0
+11/14/2023-23:13:21.600000  [**] [1:10000001:4] ICMP echo request from non-admin [**] [Classification: (null)] [Priority: 3] {ICMP} 192.168.1.60:8 -> 10.10.10.1:0
+11/14/2023-23:13:21.800000  [**] [1:10000001:4] ICMP echo request from non-admin [**] [Classification: (null)] [Priority: 3] {ICMP} 192.168.1.60:8 -> 10.10.10.1:0
+11/14/2023-23:13:22.000000  [**] [1:100000107:4] ICMP echo sweep detected [**] [Classification: (null)] [Priority: 1] {ICMP} 192.168.1.60:8 -> 10.10.10.1:0
+11/14/2023-23:13:22.000000  [**] [1:10000001:4] ICMP echo request from non-admin [**] [Classification: (null)] [Priority: 3] {ICMP} 192.168.1.60:8 -> 10.10.10.1:0
+11/14/2023-23:13:20.000000  [**] [1:10000001:4] ICMP echo request from non-admin [**] [Classification: (null)] [Priority: 3] {ICMP} 192.168.1.60:8 -> 10.10.10.1:0
+11/14/2023-23:13:20.200000  [**] [1:10000001:4] ICMP echo request from non-admin [**] [Classification: (null)] [Priority: 3] {ICMP} 192.168.1.60:8 -> 10.10.10.1:0
+11/14/2023-23:13:20.400000  [**] [1:10000001:4] ICMP echo request from non-admin [**] [Classification: (null)] [Priority: 3] {ICMP} 192.168.1.60:8 -> 10.10.10.1:0
+11/14/2023-23:13:20.600000  [**] [1:10000001:4] ICMP echo request from non-admin [**] [Classification: (null)] [Priority: 3] {ICMP} 192.168.1.60:8 -> 10.10.10.1:0
+11/14/2023-23:13:20.800000  [**] [1:10000001:4] ICMP echo request from non-admin [**] [Classification: (null)] [Priority: 3] {ICMP} 192.168.1.60:8 -> 10.10.10.1:0
+11/14/2023-23:13:21.000000  [**] [1:10000001:4] ICMP echo request from non-admin [**] [Classification: (null)] [Priority: 3] {ICMP} 192.168.1.60:8 -> 10.10.10.1:0
+11/14/2023-23:13:21.200000  [**] [1:10000001:4] ICMP echo request from non-admin [**] [Classification: (null)] [Priority: 3] {ICMP} 192.168.1.60:8 -> 10.10.10.1:0
+11/14/2023-23:13:21.400000  [**] [1:10000001:4] ICMP echo request from non-admin [**] [Classification: (null)] [Priority: 3] {ICMP} 192.168.1.60:8 -> 10.10.10.1:0
+11/14/2023-23:13:21.600000  [**] [1:10000001:4] ICMP echo request from non-admin [**] [Classification: (null)] [Priority: 3] {ICMP} 192.168.1.60:8 -> 10.10.10.1:0
+11/14/2023-23:13:21.800000  [**] [1:10000001:4] ICMP echo request from non-admin [**] [Classification: (null)] [Priority: 3] {ICMP} 192.168.1.60:8 -> 10.10.10.1:0
+11/14/2023-23:13:22.000000  [**] [1:100000107:4] ICMP echo sweep detected [**] [Classification: (null)] [Priority: 1] {ICMP} 192.168.1.60:8 -> 10.10.10.1:0
+11/14/2023-23:13:22.000000  [**] [1:10000001:4] ICMP echo request from non-admin [**] [Classification: (null)] [Priority: 3] {ICMP} 192.168.1.60:8 -> 10.10.10.1:0

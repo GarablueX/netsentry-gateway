@@ -1,0 +1,3 @@
+11/14/2023-23:13:20.000000  [**] [1:100000106:4] TCP SYN/FIN scan detected [**] [Classification: (null)] [Priority: 1] {TCP} 192.168.1.60:43006 -> 10.10.10.1:65006
+11/14/2023-23:13:20.000000  [**] [1:100000106:4] TCP SYN/FIN scan detected [**] [Classification: (null)] [Priority: 1] {TCP} 192.168.1.60:43006 -> 10.10.10.1:65006
+11/14/2023-23:13:20.000000  [**] [1:100000106:4] TCP SYN/FIN scan detected [**] [Classification: (null)] [Priority: 1] {TCP} 192.168.1.60:43006 -> 10.10.10.1:65006

@@ -1,0 +1,85 @@
+[100822 - Suricata-Main] 2026-08-22 00:42:48 Notice: suricata: This is Suricata version 7.0.10 RELEASE running in USER mode
+[100822 - Suricata-Main] 2026-08-22 00:42:48 Info: cpu: CPUs/cores online: 2
+[100822 - Suricata-Main] 2026-08-22 00:42:48 Info: suricata: Setting engine mode to IDS mode by default
+[100822 - Suricata-Main] 2026-08-22 00:42:48 Info: exception-policy: master exception-policy set to: auto
+[100822 - Suricata-Main] 2026-08-22 00:42:48 Info: logopenfile: fast output device (regular) initialized: fast.log
+[100822 - Suricata-Main] 2026-08-22 00:42:48 Info: logopenfile: eve-log output device (regular) initialized: eve.json
+[100822 - Suricata-Main] 2026-08-22 00:42:48 Info: logopenfile: stats output device (regular) initialized: stats.log
+[100822 - Suricata-Main] 2026-08-22 00:42:48 Error: detect-parse: unknown rule keyword 'ftp.command'.
+[100822 - Suricata-Main] 2026-08-22 00:42:48 Error: detect: error parsing signature "alert ftp any any -> $NETSENTRY_GATEWAY 21 (msg:"FTP anonymous login attempt detected"; flow:to_server,established; ftp.command; content:"USER"; ftp.command_data; content:"anonymous"; nocase;priority:3; sid:100000116; rev:3;)" from file /etc/suricata/rules/local.rules at line 44
+[100822 - Suricata-Main] 2026-08-22 00:42:48 Info: detect: 1 rule files processed. 26 rules successfully loaded, 1 rules failed, 0
+[100822 - Suricata-Main] 2026-08-22 00:42:48 Info: threshold-config: Threshold config parsed: 0 rule(s) found
+[100822 - Suricata-Main] 2026-08-22 00:42:48 Info: detect: 26 signatures processed. 1 are IP-only rules, 0 are inspecting packet payload, 4 inspect application layer, 0 are decoder event only
+[100822 - Suricata-Main] 2026-08-22 00:42:48 Warning: detect: rule 10000002: SYN-only to port(s) 22:22 w/o direction specified, disabling for toclient direction
+[100822 - Suricata-Main] 2026-08-22 00:42:48 Warning: detect: rule 100000114: SYN-only to port(s) 22:22 w/o direction specified, disabling for toclient direction
+[100822 - Suricata-Main] 2026-08-22 00:42:48 Warning: detect: rule 10000004: SYN-only to port(s) 3001:3001 w/o direction specified, disabling for toclient direction
+[100822 - Suricata-Main] 2026-08-22 00:42:48 Warning: detect: rule 100000122: SYN-only to port(s) 445:445 w/o direction specified, disabling for toclient direction
+[100822 - Suricata-Main] 2026-08-22 00:42:48 Warning: detect: rule 100000123: SYN-only to port(s) 3389:3389 w/o direction specified, disabling for toclient direction
+[100822 - Suricata-Main] 2026-08-22 00:42:48 Warning: detect: rule 100000124: SYN-only to port(s) 23:23 w/o direction specified, disabling for toclient direction
+[100822 - Suricata-Main] 2026-08-22 00:42:48 Warning: detect: rule 100000126: SYN-only to port(s) 8443:8443 w/o direction specified, disabling for toclient direction
+[100822 - Suricata-Main] 2026-08-22 00:42:48 Warning: detect: rule 10000005: SYN-only to port(s) 5050:5050 w/o direction specified, disabling for toclient direction
+[100822 - Suricata-Main] 2026-08-22 00:42:48 Warning: detect: rule 10000006: SYN-only to port(s) 5051:5051 w/o direction specified, disabling for toclient direction
+[100822 - Suricata-Main] 2026-08-22 00:42:48 Info: unix-manager: unix socket '/var/run/suricata-command.socket'
+[100823 - RX#01] 2026-08-22 00:42:48 Info: pcap: Starting file run for /home/gbx/netsentry-gateway/tests/cases/10000005/10000005.pcap
+[100823 - RX#01] 2026-08-22 00:42:48 Info: pcap: pcap file /home/gbx/netsentry-gateway/tests/cases/10000005/10000005.pcap end of file reached (pcap err code 0)
+[100822 - Suricata-Main] 2026-08-22 00:42:48 Notice: threads: Threads created -> RX: 1 W: 2 FM: 1 FR: 1   Engine started.
+[100822 - Suricata-Main] 2026-08-22 00:42:48 Notice: suricata: Signal Received.  Stopping engine.
+[100822 - Suricata-Main] 2026-08-22 00:42:48 Info: suricata: time elapsed 0.029s
+[100823 - RX#01] 2026-08-22 00:42:48 Notice: pcap: read 1 file, 1 packets, 54 bytes
+[100822 - Suricata-Main] 2026-08-22 00:42:48 Info: counters: Alerts: 1
+[102327 - Suricata-Main] 2026-08-22 00:45:10 Notice: suricata: This is Suricata version 7.0.10 RELEASE running in USER mode
+[102327 - Suricata-Main] 2026-08-22 00:45:10 Info: cpu: CPUs/cores online: 2
+[102327 - Suricata-Main] 2026-08-22 00:45:10 Info: suricata: Setting engine mode to IDS mode by default
+[102327 - Suricata-Main] 2026-08-22 00:45:10 Info: exception-policy: master exception-policy set to: auto
+[102327 - Suricata-Main] 2026-08-22 00:45:10 Info: logopenfile: fast output device (regular) initialized: fast.log
+[102327 - Suricata-Main] 2026-08-22 00:45:10 Info: logopenfile: eve-log output device (regular) initialized: eve.json
+[102327 - Suricata-Main] 2026-08-22 00:45:10 Info: logopenfile: stats output device (regular) initialized: stats.log
+[102327 - Suricata-Main] 2026-08-22 00:45:10 Error: detect-parse: unknown rule keyword 'ftp.command_data'.
+[102327 - Suricata-Main] 2026-08-22 00:45:10 Error: detect: error parsing signature "alert ftp any any -> $NETSENTRY_GATEWAY 21 (msg:"FTP anonymous login attempt detected"; flow:to_server,established; ftp.command_data; content:"USER"; ftp.command_data; content:"anonymous"; nocase;priority:3; sid:100000116; rev:3;)" from file /etc/suricata/rules/local.rules at line 44
+[102327 - Suricata-Main] 2026-08-22 00:45:10 Info: detect: 1 rule files processed. 26 rules successfully loaded, 1 rules failed, 0
+[102327 - Suricata-Main] 2026-08-22 00:45:10 Info: threshold-config: Threshold config parsed: 0 rule(s) found
+[102327 - Suricata-Main] 2026-08-22 00:45:10 Info: detect: 26 signatures processed. 1 are IP-only rules, 0 are inspecting packet payload, 4 inspect application layer, 0 are decoder event only
+[102327 - Suricata-Main] 2026-08-22 00:45:10 Warning: detect: rule 10000002: SYN-only to port(s) 22:22 w/o direction specified, disabling for toclient direction
+[102327 - Suricata-Main] 2026-08-22 00:45:10 Warning: detect: rule 100000114: SYN-only to port(s) 22:22 w/o direction specified, disabling for toclient direction
+[102327 - Suricata-Main] 2026-08-22 00:45:10 Warning: detect: rule 10000004: SYN-only to port(s) 3001:3001 w/o direction specified, disabling for toclient direction
+[102327 - Suricata-Main] 2026-08-22 00:45:10 Warning: detect: rule 100000122: SYN-only to port(s) 445:445 w/o direction specified, disabling for toclient direction
+[102327 - Suricata-Main] 2026-08-22 00:45:10 Warning: detect: rule 100000123: SYN-only to port(s) 3389:3389 w/o direction specified, disabling for toclient direction
+[102327 - Suricata-Main] 2026-08-22 00:45:10 Warning: detect: rule 100000124: SYN-only to port(s) 23:23 w/o direction specified, disabling for toclient direction
+[102327 - Suricata-Main] 2026-08-22 00:45:10 Warning: detect: rule 100000126: SYN-only to port(s) 8443:8443 w/o direction specified, disabling for toclient direction
+[102327 - Suricata-Main] 2026-08-22 00:45:10 Warning: detect: rule 10000005: SYN-only to port(s) 5050:5050 w/o direction specified, disabling for toclient direction
+[102327 - Suricata-Main] 2026-08-22 00:45:10 Warning: detect: rule 10000006: SYN-only to port(s) 5051:5051 w/o direction specified, disabling for toclient direction
+[102327 - Suricata-Main] 2026-08-22 00:45:10 Info: unix-manager: unix socket '/var/run/suricata-command.socket'
+[102328 - RX#01] 2026-08-22 00:45:10 Info: pcap: Starting file run for /home/gbx/netsentry-gateway/tests/cases/10000005/10000005.pcap
+[102328 - RX#01] 2026-08-22 00:45:10 Info: pcap: pcap file /home/gbx/netsentry-gateway/tests/cases/10000005/10000005.pcap end of file reached (pcap err code 0)
+[102327 - Suricata-Main] 2026-08-22 00:45:10 Notice: threads: Threads created -> RX: 1 W: 2 FM: 1 FR: 1   Engine started.
+[102327 - Suricata-Main] 2026-08-22 00:45:10 Notice: suricata: Signal Received.  Stopping engine.
+[102327 - Suricata-Main] 2026-08-22 00:45:10 Info: suricata: time elapsed 0.023s
+[102328 - RX#01] 2026-08-22 00:45:10 Notice: pcap: read 1 file, 1 packets, 54 bytes
+[102327 - Suricata-Main] 2026-08-22 00:45:10 Info: counters: Alerts: 1
+[104635 - Suricata-Main] 2026-08-22 00:49:14 Notice: suricata: This is Suricata version 7.0.10 RELEASE running in USER mode
+[104635 - Suricata-Main] 2026-08-22 00:49:14 Info: cpu: CPUs/cores online: 2
+[104635 - Suricata-Main] 2026-08-22 00:49:14 Info: suricata: Setting engine mode to IDS mode by default
+[104635 - Suricata-Main] 2026-08-22 00:49:14 Info: exception-policy: master exception-policy set to: auto
+[104635 - Suricata-Main] 2026-08-22 00:49:14 Info: logopenfile: fast output device (regular) initialized: fast.log
+[104635 - Suricata-Main] 2026-08-22 00:49:14 Info: logopenfile: eve-log output device (regular) initialized: eve.json
+[104635 - Suricata-Main] 2026-08-22 00:49:14 Info: logopenfile: stats output device (regular) initialized: stats.log
+[104635 - Suricata-Main] 2026-08-22 00:49:14 Info: detect: 1 rule files processed. 27 rules successfully loaded, 0 rules failed, 0
+[104635 - Suricata-Main] 2026-08-22 00:49:14 Info: threshold-config: Threshold config parsed: 0 rule(s) found
+[104635 - Suricata-Main] 2026-08-22 00:49:14 Info: detect: 27 signatures processed. 1 are IP-only rules, 1 are inspecting packet payload, 4 inspect application layer, 0 are decoder event only
+[104635 - Suricata-Main] 2026-08-22 00:49:14 Warning: detect: rule 10000002: SYN-only to port(s) 22:22 w/o direction specified, disabling for toclient direction
+[104635 - Suricata-Main] 2026-08-22 00:49:14 Warning: detect: rule 100000114: SYN-only to port(s) 22:22 w/o direction specified, disabling for toclient direction
+[104635 - Suricata-Main] 2026-08-22 00:49:14 Warning: detect: rule 10000004: SYN-only to port(s) 3001:3001 w/o direction specified, disabling for toclient direction
+[104635 - Suricata-Main] 2026-08-22 00:49:14 Warning: detect: rule 100000122: SYN-only to port(s) 445:445 w/o direction specified, disabling for toclient direction
+[104635 - Suricata-Main] 2026-08-22 00:49:14 Warning: detect: rule 100000123: SYN-only to port(s) 3389:3389 w/o direction specified, disabling for toclient direction
+[104635 - Suricata-Main] 2026-08-22 00:49:14 Warning: detect: rule 100000124: SYN-only to port(s) 23:23 w/o direction specified, disabling for toclient direction
+[104635 - Suricata-Main] 2026-08-22 00:49:14 Warning: detect: rule 100000126: SYN-only to port(s) 8443:8443 w/o direction specified, disabling for toclient direction
+[104635 - Suricata-Main] 2026-08-22 00:49:14 Warning: detect: rule 10000005: SYN-only to port(s) 5050:5050 w/o direction specified, disabling for toclient direction
+[104635 - Suricata-Main] 2026-08-22 00:49:14 Warning: detect: rule 10000006: SYN-only to port(s) 5051:5051 w/o direction specified, disabling for toclient direction
+[104635 - Suricata-Main] 2026-08-22 00:49:14 Info: unix-manager: unix socket '/var/run/suricata-command.socket'
+[104636 - RX#01] 2026-08-22 00:49:14 Info: pcap: Starting file run for /home/gbx/netsentry-gateway/tests/cases/10000005/10000005.pcap
+[104636 - RX#01] 2026-08-22 00:49:14 Info: pcap: pcap file /home/gbx/netsentry-gateway/tests/cases/10000005/10000005.pcap end of file reached (pcap err code 0)
+[104635 - Suricata-Main] 2026-08-22 00:49:14 Notice: threads: Threads created -> RX: 1 W: 2 FM: 1 FR: 1   Engine started.
+[104635 - Suricata-Main] 2026-08-22 00:49:14 Notice: suricata: Signal Received.  Stopping engine.
+[104635 - Suricata-Main] 2026-08-22 00:49:14 Info: suricata: time elapsed 0.026s
+[104636 - RX#01] 2026-08-22 00:49:14 Notice: pcap: read 1 file, 1 packets, 54 bytes
+[104635 - Suricata-Main] 2026-08-22 00:49:14 Info: counters: Alerts: 1

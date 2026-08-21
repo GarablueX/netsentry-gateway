@@ -1,0 +1,3 @@
+11/14/2023-23:13:22.970000  [**] [1:100000109:4] TCP SYN flood detected [**] [Classification: (null)] [Priority: 1] {TCP} 10.20.0.10:40099 -> 10.10.10.1:65009
+11/14/2023-23:13:22.970000  [**] [1:100000109:4] TCP SYN flood detected [**] [Classification: (null)] [Priority: 1] {TCP} 10.20.0.10:40099 -> 10.10.10.1:65009
+11/14/2023-23:13:22.970000  [**] [1:100000109:4] TCP SYN flood detected [**] [Classification: (null)] [Priority: 1] {TCP} 10.20.0.10:40099 -> 10.10.10.1:65009
