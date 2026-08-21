@@ -21,7 +21,7 @@ from pathlib import Path
 CASES_DIR = Path(__file__).parent
 
 # --- configurable paths ---
-SURICATA_RULES = "/etc/suricata/rules/local.rules"
+SURICATA_RULES = "/home/gbx/netsentry-gateway/suricata/rules/local.rules"
 SURICATA_CONFIG = "/etc/suricata/suricata.yaml"
 # ------------------------------------------------------------------
 
