@@ -91,3 +91,5 @@ suricata.log
 # Generated firewall configs
 firewall.rendered.nft
 *.rendered.nft
+
+!tests/cases/**/*.pcap
