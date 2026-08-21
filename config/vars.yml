@@ -5,7 +5,7 @@ network:
  ap_lan: "10.10.10.0/24"
  netsentry_home_ip: "192.168.1.19"
  netsentry_ap_ip: "10.10.10.1"
- admin_ip: "192.168.1.7"
+ admin_ip: "192.168.1.50"
  tailscale_interface: "tailscale0"
  tailscale_net: "100.64.0.0/10"
  ssid: "NetSentry_AP"
