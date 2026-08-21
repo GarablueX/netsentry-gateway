@@ -58,7 +58,7 @@ firewall:
   ftp_port: "21"
   ftp_pass_range: "40000-40100"
   adguard_ui_port: "3001"
-  wazuh_ui_port: "8443"
+  wazuh_manager_port: "8443"
   http_port: "80"
   https_port: "443"
 
