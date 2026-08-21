@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+#this is the old iptables configuration 
 set -euo pipefail 
 
 TAILSCALE_I="tailscale0"

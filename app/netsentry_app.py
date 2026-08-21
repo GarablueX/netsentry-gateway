@@ -84,8 +84,6 @@ ADGUARD_URL = os.getenv("NETSENTRY_ADGUARD_URL", "http://127.0.0.1:3001")
 ADGUARD_USER = os.getenv("NETSENTRY_ADGUARD_USER", "")
 ADGUARD_PASSWORD = os.getenv("NETSENTRY_ADGUARD_PASSWORD", "")
 
-FIREWALL_READ_HELPER = Path("/usr/local/sbin/netsentry-read-firewall")
-
 
 ADMIN_USER = os.getenv("NETSENTRY_WEB_USER", "admin")
 ADMIN_PASSWORD = os.getenv("NETSENTRY_WEB_PASSWORD", "")
@@ -111,7 +109,6 @@ ADMIN_ROUTES = [
     ("/admin/dashboard", "Dashboard"),
     ("/admin/clients", "Clients"),
     ("/admin/dns", "DNS"),
-    ("/admin/firewall", "Firewall"),
     ("/admin/network", "Network"),
 ]
 
@@ -213,6 +210,17 @@ def read_jsonl(path, limit=None):
         except Exception:
             items.append({"raw": line})
     return items
+
+
+def read_json_file(path, default=None):
+    if default is None:
+        default = {}
+    if not path.exists():
+        return default
+    try:
+        return json.loads(path.read_text(errors="ignore"))
+    except Exception:
+        return default
 
 
 def contains_ci(text, needle):
@@ -570,88 +578,6 @@ def get_dns_data():
         "raw": {"stats": stats, "status": status, "querylog": querylog},
     }
 
-def read_firewall_table(name):
-    if FIREWALL_READ_HELPER.exists():
-        return run_cmd(["sudo", "-n", str(FIREWALL_READ_HELPER), name], timeout=4)
-    if name == "input":
-        return run_cmd(["sudo", "-n", "iptables", "-L", "INPUT", "-n", "-v", "--line-numbers"], timeout=4)
-    if name == "forward":
-        return run_cmd(["sudo", "-n", "iptables", "-L", "FORWARD", "-n", "-v", "--line-numbers"], timeout=4)
-    if name == "nat":
-        return run_cmd(["sudo", "-n", "iptables", "-t", "nat", "-L", "-n", "-v", "--line-numbers"], timeout=4)
-    return {"ok": False, "stdout": "", "stderr": "unknown table", "returncode": -1}
-
-
-def text_has(text, *needles):
-    return all(needle in text for needle in needles)
-
-
-def get_ip_forwarding_data():
-    result = run_cmd(["sysctl", "-n", "net.ipv4.ip_forward"], timeout=2)
-    enabled = result["stdout"].strip() == "1"
-    return {"enabled": enabled, "state": "enabled" if enabled else "disabled", "raw": result}
-
-
-def get_firewall_data():
-    raw = {"input": read_firewall_table("input"), "forward": read_firewall_table("forward"), "nat": read_firewall_table("nat")}
-    input_text = raw["input"]["stdout"] or ""
-    forward_text = raw["forward"]["stdout"] or ""
-    nat_text = raw["nat"]["stdout"] or ""
-    ip_forwarding = get_ip_forwarding_data()
-    input_final_drop = "DROP       all" in input_text
-    nat_masquerade = "MASQUERADE" in nat_text and AP_LAN in nat_text
-    nat_lan_exception = "RETURN" in nat_text and AP_LAN in nat_text and HOME_LAN in nat_text
-    access_matrix = [
-        {"category": "SSH Admin", "source": ADMIN_IP, "ports": "TCP 22", "purpose": "Admin SSH only", "ok": text_has(input_text, ADMIN_IP, "tcp dpt:22")},
-        {"category": "DNS AP", "source": AP_LAN, "ports": "UDP/TCP 53", "purpose": "AP client DNS", "ok": text_has(input_text, AP_LAN, "udp dpt:53") and text_has(input_text, AP_LAN, "tcp dpt:53")},
-        {"category": "DNS HOME", "source": HOME_LAN, "ports": "UDP/TCP 53", "purpose": "HOME LAN DNS", "ok": text_has(input_text, HOME_LAN, "udp dpt:53") and text_has(input_text, HOME_LAN, "tcp dpt:53")},
-        {"category": "DHCP AP", "source": AP_INTERFACE, "ports": "UDP 67", "purpose": "DHCP for AP clients", "ok": text_has(input_text, AP_INTERFACE, "udp spt:68 dpt:67")},
-        {"category": "Nginx HTTP", "source": f"{HOME_LAN} + {AP_LAN}", "ports": "TCP 80", "purpose": "Unified web app", "ok": text_has(input_text, HOME_LAN, "tcp dpt:80") and text_has(input_text, AP_LAN, "tcp dpt:80")},
-        {"category": "Nginx HTTPS", "source": f"{HOME_LAN} + {AP_LAN}", "ports": "TCP 443", "purpose": "HTTPS frontend", "ok": text_has(input_text, HOME_LAN, "tcp dpt:443") and text_has(input_text, AP_LAN, "tcp dpt:443")},
-        {"category": "Legacy Portal", "source": f"{HOME_LAN} + {AP_LAN}", "ports": "TCP 5500", "purpose": "Old portal during migration", "ok": text_has(input_text, HOME_LAN, "tcp dpt:5500") and text_has(input_text, AP_LAN, "tcp dpt:5500")},
-        {"category": "Legacy Status API", "source": f"{HOME_LAN} + {AP_LAN}", "ports": "TCP 5051", "purpose": "Old status service during migration", "ok": text_has(input_text, HOME_LAN, "tcp dpt:5051") and text_has(input_text, AP_LAN, "tcp dpt:5051")},
-        {"category": "AdGuard UI", "source": ADMIN_IP, "ports": "TCP 3001", "purpose": "AdGuard admin UI", "ok": text_has(input_text, ADMIN_IP, "tcp dpt:3001")},        {"category": "FTP", "source": ADMIN_IP, "ports": "TCP 21 + 40000:40100", "purpose": "Admin-only FTP", "ok": text_has(input_text, ADMIN_IP, "tcp dpt:21") and "tcp dpts:40000:40100" in input_text},
-    ]
-    policy = [
-        {"name": "Established traffic", "description": "Replies to established connections are accepted.", "ok": "RELATED,ESTABLISHED" in input_text},
-        {"name": "Invalid packets", "description": "Invalid conntrack packets are dropped.", "ok": "ctstate INVALID" in input_text and "DROP" in input_text},
-        {"name": "Loopback", "description": "Localhost traffic is accepted.", "ok": "lo" in input_text and "ACCEPT" in input_text},
-        {"name": "Final INPUT drop", "description": "Unknown input traffic is denied.", "ok": input_final_drop},
-        {"name": "AP forwarding", "description": "AP clients can route through the gateway.", "ok": AP_LAN in forward_text and "ACCEPT" in forward_text},
-        {"name": "Return forwarding", "description": "Established return traffic is allowed back to AP clients.", "ok": "RELATED,ESTABLISHED" in forward_text},
-    ]
-    q = request.args.get("q", "").strip()
-    chain_filter = request.args.get("chain", "").strip().lower()
-    filtered_raw = {}
-    for key, item in raw.items():
-        lines = item["stdout"].splitlines() if item["stdout"] else item["stderr"].splitlines()
-        if q:
-            lines = [line for line in lines if contains_ci(line, q)]
-        filtered_raw[key] = "\n".join(lines)
-    return {
-        "ip_forwarding": ip_forwarding,
-        "input_final_drop": input_final_drop,
-        "nat": {"masquerade": nat_masquerade, "lan_exception": nat_lan_exception},
-        "policy": policy,
-        "access_matrix": access_matrix,
-        "raw": raw,
-        "filtered_raw": filtered_raw,
-        "query": q,
-        "chain_filter": chain_filter,
-    }
-
-
-
-def read_json_file(path, default=None):
-    if default is None:
-        default = {}
-    if not path.exists():
-        return default
-    try:
-        return json.loads(path.read_text(errors="ignore"))
-    except Exception:
-        return default
-
 
 def alert_rev_info(value):
     try:
@@ -718,7 +644,6 @@ def normalize_alert(alert):
     }
 
 
-
 def parse_limit(default=1000, maximum=20000):
     raw = request.args.get("limit", str(default)).strip().lower()
     if raw == "all":
@@ -728,7 +653,6 @@ def parse_limit(default=1000, maximum=20000):
     except Exception:
         return default
     return max(1, min(value, maximum))
-
 
 
 def get_alerts_data(limit=None):
@@ -808,8 +732,6 @@ def get_alerts_data(limit=None):
     }
 
 
-
-
 def backup_and_clear_alerts():
     archive = BASE_DIR / "snort/alerts/archive"
     archive.mkdir(parents=True, exist_ok=True)
@@ -831,7 +753,6 @@ def backup_and_clear_alerts():
             backups.append(str(backup))
 
     return backups
-
 
 
 def summarize_log_entry(source, entry):
@@ -858,7 +779,6 @@ def summarize_log_entry(source, entry):
         "event": event,
         "body": body,
     }
-
 
 
 def get_hardware_data():
@@ -1015,9 +935,8 @@ def admin_dashboard():
     clients = get_clients_data()
     alerts = get_alerts_data(limit=300)
     dns = get_dns_data()
-    firewall = get_firewall_data()
     network = get_interfaces_data()
-    return render_template("admin/dashboard.html", title="Admin Dashboard", subtitle="Read-only gateway overview", status=status, clients=clients, alerts=alerts, dns=dns, firewall=firewall, network=network, home_lan=HOME_LAN, ap_lan=AP_LAN, wan_interface=WAN_INTERFACE, ap_interface=AP_INTERFACE)
+    return render_template("admin/dashboard.html", title="Admin Dashboard", subtitle="Read-only gateway overview", status=status, clients=clients, alerts=alerts, dns=dns, network=network, home_lan=HOME_LAN, ap_lan=AP_LAN, wan_interface=WAN_INTERFACE, ap_interface=AP_INTERFACE)
 
 
 @app.route("/admin/clients")
@@ -1030,15 +949,6 @@ def admin_clients():
 @login_required
 def admin_dns():
     return render_template("admin/dns.html", title="DNS", subtitle="AdGuard DNS filtering statistics", dns=get_dns_data())
-
-
-@app.route("/admin/firewall")
-@login_required
-def admin_firewall():
-    return render_template("admin/firewall.html", title="Firewall", subtitle="Human-readable read-only firewall policy", firewall=get_firewall_data())
-
-
-
 
 
 @app.route("/admin/network")
@@ -1079,14 +989,6 @@ def api_network_interfaces():
 @login_required
 def api_network_routes():
     return jsonify(get_routes_data())
-
-
-
-@app.route("/api/firewall/rules")
-@login_required
-def api_firewall_rules():
-    return jsonify(get_firewall_data())
-
 
 
 if __name__ == "__main__":
