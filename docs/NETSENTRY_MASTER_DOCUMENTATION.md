@@ -1,13 +1,12 @@
 # NetSentry Gateway — Master Documentation
 
 **Version:** v2.6.0 — Stable
+
 **Status:** Active homelab deployment
+
 **Type:** Personal / student cybersecurity project
 
-This is the authoritative technical reference for NetSentry. If the
-top-level `README.md`, older files in `docs/`, or code comments ever
-disagree with this document, **this document is correct** — update the
-others to match rather than the other way around.
+This is the authoritative technical reference for NetSentry. If the top-level `README.md`, older files under `docs/`, or code comments disagree with this document, verify the active implementation and update the stale documentation.
 
 ---
 
@@ -34,19 +33,17 @@ others to match rather than the other way around.
 
 ## 1. Project Summary
 
-NetSentry converts a Debian machine into a small security gateway appliance
-sitting between a home ISP network and a set of Wi-Fi clients. It combines:
+NetSentry converts a Debian machine into a small security gateway between a home network and a Wi-Fi client subnet. It combines:
 
-- Routing, DHCP, and DNS filtering for a separate AP client subnet
-- Stateful firewall/NAT enforcement (iptables)
-- Network-level intrusion detection (Suricata)
-- Security event correlation and investigation (Wazuh SIEM)
-- A read-only operational status dashboard (Flask + Nginx)
-- Private remote administration (Tailscale)
+- Routing, DHCP, and DNS filtering for the AP subnet
+- Stateful firewall, forwarding, and NAT through native nftables
+- Ansible-managed firewall deployment and persistent IPv4 forwarding
+- Network intrusion detection with Suricata
+- Security event correlation and investigation with Wazuh
+- A read-only Flask and Nginx operations dashboard
+- Private remote administration through Tailscale
 
-It is explicitly **not** an enterprise product. It exists to demonstrate
-real, working blue-team infrastructure skills in a lab that runs
-continuously, not a one-off exercise that gets torn down.
+NetSentry is not an enterprise product. It demonstrates practical blue-team infrastructure in a continuously running homelab.
 
 ---
 
@@ -59,9 +56,9 @@ AP Client
    v
 NetSentry AP Interface (wlx200db0220b9a / 10.10.10.1)
    |
-   |-- Suricata IDS reads this interface (pre-NAT, real client IPs)
+   |-- Suricata IDS observes AP-side traffic
    |
-   | iptables firewall / NAT / routing
+   | native nftables firewall / routing / NAT
    v
 NetSentry HOME/WAN Interface (enp3s0 / 192.168.1.19)
    |
@@ -69,243 +66,365 @@ NetSentry HOME/WAN Interface (enp3s0 / 192.168.1.19)
 Home Router / Internet
 ```
 
+Firewall configuration pipeline:
+
+```text
+config/vars.yml
+   |
+   v
+templates/firewall.nft.j2
+   |
+   v
+playbooks/firewall.yml -- validates with nft --check
+   |
+   v
+/etc/nftables.conf -> nftables.service -> table inet netsentry
+```
+
 Dashboard architecture:
 
 ```text
 Browser -> Nginx :80/:443 -> Flask 127.0.0.1:5000   (gateway operations)
-Browser -> Nginx :8443     -> Wazuh dashboard        (SIEM / investigation)
+Browser -> Nginx :8443     -> Wazuh dashboard        (SIEM investigation)
 ```
 
 IDS/SIEM data pipeline:
 
 ```text
-Suricata on wlx200db0220b9a
+Suricata
    |
    v
 /var/log/suricata/eve.json
    |
    v
-Filebeat
-   |
-   v
-Wazuh manager -> Wazuh indexer -> Wazuh dashboard (https://192.168.1.19:8443/)
+Filebeat -> Wazuh manager -> Wazuh indexer -> Wazuh dashboard
 ```
 
 Firewall log correlation pipeline:
 
 ```text
-iptables LOG rules (rate-limited)
+nftables rate-limited log rules
    |
    v
 journald / kernel log
    |
    v
-Wazuh (via ossec/journald monitoring) -> alerts.json
+Wazuh monitoring and correlation
 ```
 
-Design principle governing all of the above: **NetSentry handles gateway
-operations. Wazuh handles security investigation.** The two are not meant to
-duplicate each other's job — this is why the old built-in IDS dashboard was
-removed in v2.2 (see [Version History](#13-version-history)).
+Design principle: **NetSentry handles gateway operations; Wazuh handles security investigation.** The retired built-in IDS dashboard was removed in v2.2 to avoid duplicating Wazuh.
 
 ---
 
 ## 3. Network Layout
 
+The values below come from the current `config/vars.yml`. Other historical files may contain older values and must not be assumed to be synchronized.
+
 ### HOME / Upstream Side
 
-| Field           | Value             |
-| ---------------- | ----------------- |
-| Interface         | `enp3s0`           |
-| Network            | `192.168.1.0/24`   |
-| NetSentry IP        | `192.168.1.19`     |
-| Admin laptop IP     | `192.168.1.11`     |
+| Field | Value |
+| --- | --- |
+| Interface | `enp3s0` |
+| Network | `192.168.1.0/24` |
+| NetSentry IP | `192.168.1.19` |
+| nftables admin IP | `192.168.1.50` |
 
 ### AP / Client Side
 
-| Field           | Value             |
-| ---------------- | ------------------ |
-| Interface          | `wlx200db0220b9a`  |
-| Network              | `10.10.10.0/24`   |
-| Gateway IP           | `10.10.10.1`       |
-| SSID                 | `NetSentry-Test`   |
-| DHCP range            | `10.10.10.50 - 10.10.10.150` |
+| Field | Value |
+| --- | --- |
+| Interface | `wlx200db0220b9a` |
+| Network | `10.10.10.0/24` |
+| Gateway IP | `10.10.10.1` |
+| SSID | `NetSentry_AP` |
+| DHCP range | `10.10.10.50`–`10.10.10.150` |
 
 ### Return Path
 
-The ISP/HOME router has a static route sending `10.10.10.0/24` traffic back
-through NetSentry (`192.168.1.19`), so devices on the HOME LAN can reach AP
-clients directly and NetSentry does not need to NAT AP↔HOME traffic.
+The home router requires a route for `10.10.10.0/24` through NetSentry (`192.168.1.19`) if home hosts must initiate connections to AP clients. The nftables rules do not masquerade AP-to-home traffic, preserving AP source addresses. AP-to-internet traffic is masqueraded through the WAN interface.
 
 ---
 
 ## 4. Component Reference
 
-| Component    | Role                                                    |
-| ------------ | -------------------------------------------------------- |
-| Debian       | Base OS                                                    |
-| hostapd      | Wi-Fi AP service on the AP interface                       |
-| dnsmasq      | DHCP server for AP clients                                 |
-| AdGuard Home | DNS filtering/resolution, exposed on `127.0.0.1:3001`      |
-| iptables     | Firewall, NAT, forwarding policy                            |
-| Nginx        | TLS termination + reverse proxy for Flask and Wazuh          |
-| Flask        | Gateway operations dashboard backend (`app/netsentry_app.py`) |
-| Suricata     | Network IDS, running on the AP interface                     |
-| Wazuh        | SIEM: manager, indexer, dashboard, investigation UI          |
-| Filebeat     | Ships Suricata `eve.json` and other logs into Wazuh           |
-| Tailscale    | Private WireGuard-based remote admin overlay network          |
-| systemd      | Boot-time service ordering and supervision                    |
+| Component | Role |
+| --- | --- |
+| Debian | Base operating system |
+| hostapd | Wi-Fi access point |
+| dnsmasq | DHCP for AP clients |
+| AdGuard Home | DNS filtering and resolution |
+| nftables | Native firewall, forwarding, logging, and NAT |
+| Ansible | Firewall template rendering, validation, installation, and service setup |
+| Nginx | TLS termination and reverse proxy |
+| Flask | Read-only gateway operations dashboard |
+| Suricata | Network intrusion detection |
+| Wazuh | SIEM manager, indexer, dashboard, and investigation UI |
+| Filebeat | Ships Suricata and other events to Wazuh |
+| Tailscale | Private remote administration overlay |
+| systemd | Service startup and supervision |
 
 ---
 
 ## 5. Firewall / NAT
 
-**Active script:** `scripts/apply_firewall.sh`
-**Active service:** `netsentry-firewall.service` (oneshot, runs at boot
-before `hostapd`, `dnsmasq`, and `nginx`)
+### Active implementation
 
-### Design pattern
+| Path | Purpose |
+| --- | --- |
+| `config/vars.yml` | Interface, address, subnet, and port variables |
+| `templates/firewall.nft.j2` | Native nftables Jinja template |
+| `playbooks/firewall.yml` | Local privileged deployment playbook |
+| `/etc/nftables.conf` | Rendered system configuration |
+| `nftables.service` | Applies the ruleset and loads it after reboot |
 
-1. Set default policies to `ACCEPT` temporarily (so flushing doesn't lock
-   out the current session).
-2. Flush all chains in `filter`, `nat`, `mangle`, `raw` tables and delete
-   user-defined chains.
-3. Rebuild the ruleset explicitly, most specific rules first.
-4. Add a rate-limited `LOG` rule immediately before the final `DROP`, so
-   dropped packets are visible to Wazuh without flooding logs.
-5. Set default policies to `DROP` (INPUT/FORWARD) as a second line of
-   defense behind the explicit terminal DROP rules.
+`scripts/apply_firewall.sh` and the custom `netsentry-firewall.service` are remnants of the retired iptables implementation, not the current deployment path.
 
-### NAT behavior
+### Prerequisites
 
-```bash
-# AP -> HOME LAN: no NAT, real client IP stays visible
-iptables -t nat -A POSTROUTING -s "$AP_NET" -d "$HOME_LAN" -j RETURN
+- Debian or Ubuntu with systemd and `apt`
+- Ansible
+- `ansible.posix` collection for `ansible.posix.sysctl`
+- Privilege escalation through `sudo`
+- `/usr/sbin/nft`
 
-# AP -> Internet: NAT through the WAN interface
-iptables -t nat -A POSTROUTING -s "$AP_NET" -o "$WAN_I" -j MASQUERADE
-```
-
-This is deliberate: Suricata runs on the AP interface specifically so it
-sees pre-NAT client IPs, and not masquerading AP→HOME traffic keeps that
-visibility intact for traffic destined to the home network too.
-
-### Access rules summary
-
-| Source              | Destination port(s)      | Notes                                   |
-| -------------------- | -------------------------- | ------------------------------------------ |
-| `$ADMIN_IP`             | 22 (SSH), 3001 (AdGuard), 8443 (Wazuh), 21 + 40000–40100 (FTP) | Admin-only management access |
-| `$AP_NET`, `$HOME_LAN`     | 53 (DNS, tcp+udp)             | DNS filtering for both subnets |
-| `$AP_NET`, `$HOME_LAN`     | 80, 443                       | Dashboard access                 |
-| `wlx200db0220b9a` (DHCP)    | udp 68→67                    | DHCP for AP clients               |
-| `tailscale0` (100.64.0.0/10) | 22, 80, 443, 8443            | Remote admin over Tailscale       |
-| any                        | (everything else)             | Dropped, rate-limited log, then default DROP |
-
-**Note on FTP (port 21):** This is not a real FTP service exposed to
-clients — it is restricted to `$ADMIN_IP` only and exists to give
-`suricata/rules/local.rules` (SIDs `100000116`/`100000117`, anonymous-login
-and generic FTP detection) something to validate against during manual
-testing. It is a controlled detection-testing surface, not production FTP
-access.
-
-### Client-side forwarding rules
+Install the required collection when needed:
 
 ```bash
-# HOME LAN <-> AP LAN, both directions, unrestricted (trusted relationship)
-iptables -A FORWARD -i "$WAN_I" -o "$AP_I" -s "$HOME_LAN" -d "$AP_NET" -j ACCEPT
-iptables -A FORWARD -i "$AP_I" -o "$WAN_I" -s "$AP_NET" -d "$HOME_LAN" -j ACCEPT
-
-# AP -> Internet, and its established return traffic
-iptables -A FORWARD -i "$AP_I" -o "$WAN_I" -s "$AP_NET" -j ACCEPT
-iptables -A FORWARD -i "$WAN_I" -o "$AP_I" -d "$AP_NET" -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+ansible-galaxy collection install ansible.posix
 ```
+
+### Deployment
+
+Review `config/vars.yml`, then run from the repository root:
+
+```bash
+ansible-playbook playbooks/firewall.yml --check --diff --ask-become-pass
+ansible-playbook playbooks/firewall.yml --ask-become-pass
+```
+
+The playbook:
+
+1. Targets `localhost` with `connection: local` and `become: true`.
+2. Installs the `nftables` package.
+3. Sets `net.ipv4.ip_forward=1` and persists it in `/etc/sysctl.d/99-netsentry.conf`.
+4. Renders `templates/firewall.nft.j2` to an Ansible temporary file.
+5. Runs `/usr/sbin/nft --check --file <temporary-file>` before replacing `/etc/nftables.conf`.
+6. Installs the configuration as `root:root` with mode `0644`.
+7. Enables and starts `nftables.service`.
+8. Reloads nftables through a handler when the rendered template changes.
+
+Syntax validation protects the live configuration from an invalid rendered file. It does not prove that the policy, interface names, or management addresses are safe for the target host.
+
+### Active ruleset
+
+The template creates `table inet netsentry` with three chains.
+
+#### Input
+
+The `input` chain has policy `drop` and permits:
+
+- Established and related connections
+- Loopback traffic
+- ICMP from the home and AP networks
+- TCP ports `22`, `80`, `443`, `3001`, and `8443` from `network.admin_ip`
+- TCP ports `22`, `80`, and `443` from `tailscale0` addresses in `100.64.0.0/10`
+- TCP and UDP DNS on port `53` from the AP network
+- DHCP traffic on the AP interface from UDP source port `68` to destination port `67`
+- HTTP and HTTPS from the home and AP networks
+
+Invalid state is dropped. Remaining input is rate-limited and logged with the prefix `nftables input drop:` before the chain policy drops it.
+
+#### Forwarding
+
+The `forward` chain has policy `drop` and permits:
+
+- Home-to-AP traffic on the configured WAN-to-AP interface direction
+- AP-to-home traffic on the configured AP-to-WAN direction
+- AP traffic leaving through the WAN interface
+- Established and related return traffic from WAN to AP when addressed to the AP network
+
+Other forwarded traffic is rate-limited and logged with `NETSENTRY_FW_FORWARD_DROP` before the chain policy drops it.
+
+> The current AP-to-home rule permits AP clients to initiate connections to the entire home subnet. Remove or constrain it if AP isolation is required.
+
+#### NAT
+
+The `postrouting` chain:
+
+- Returns without NAT for AP traffic destined for the home LAN
+- Masquerades AP traffic leaving through the WAN interface
+
+### Tailscale and full-ruleset flushing
+
+The template begins with:
+
+```nft
+flush ruleset
+```
+
+This clears every nftables table, not only `table inet netsentry`. It can remove Tailscale compatibility tables and rules owned by containers or other firewall managers. The current playbook does not restart those services.
+
+After applying the firewall, restart Tailscale so it recreates its `ts-*` rules:
+
+```bash
+sudo systemctl restart tailscaled
+```
+
+The resulting ownership is:
+
+```text
+NetSentry -> native table inet netsentry
+Tailscale -> iptables-nft compatibility tables containing ts-* chains
+```
+
+The `ts-*` chains belong to Tailscale and are not evidence that the old NetSentry iptables firewall returned.
+
+### Post-deployment checks
+
+```bash
+sudo systemctl is-enabled nftables
+sudo systemctl status nftables --no-pager
+sudo nft list table inet netsentry
+sudo nft list ruleset
+sudo sysctl net.ipv4.ip_forward
+sudo iptables-save
+sudo ip6tables-save
+```
+
+Expected NetSentry state:
+
+- `nftables.service` is enabled and active.
+- `table inet netsentry` contains `input`, `forward`, and `postrouting`.
+- Input and forwarding policies are `drop`.
+- IPv4 forwarding equals `1`.
+- No retired NetSentry iptables chains are present.
+- Any `ts-*` chains are Tailscale-owned compatibility rules.
+
+Reboot testing has confirmed that nftables and IPv4 forwarding persist, AP forwarding/NAT continue to work, and Tailscale recreates its own rules.
 
 ---
 
 ## 6. IDS: Suricata
 
 **Active rules file:** `suricata/rules/local.rules`
-**Active config:** `/etc/suricata/suricata.yaml` (repo copy: `config/suricata/suricata.yaml`)
-**Capture interface:** `wlx200db0220b9a` (AP side, pre-NAT)
 
-### Variables used in rules
+**System config used by test scripts:** `/etc/suricata/suricata.yaml`
 
-```text
-$AP_LAN              10.10.10.0/24
-$HOME_LAN             192.168.1.0/24
-$ADMIN_IP             192.168.1.11
-$AP_GATEWAY           10.10.10.1
-$HOME_GATEWAY         192.168.1.19
-$NETSENTRY_GATEWAY    [10.10.10.1,192.168.1.19]
-```
+**Repository config currently present:** `config/suricata/suriata.yml`
+
+The tracked repository filename differs from older documentation and from the system path used by the scripts. Verify that the deployed `/etc/suricata/suricata.yaml` contains the intended variables and EVE output configuration.
 
 ### Current rule categories
 
 ```text
-ICMP echo from non-admin / oversized ICMP / ICMP sweep
-SSH brute-force threshold / SSH protocol v1 detection
-AdGuard UI access attempts from non-admin
-Legacy service/API port probing (historical ports 5050/5051)
-Non-admin requests containing /admin in the URI
-TCP SYN burst / SYN flood
-TCP NULL / FIN / XMAS / SYN-FIN scans
-UDP flood / TCP RST flood
-DNS bypass from AP clients (queries not going to NetSentry's resolver)
-FTP anonymous login attempt (detection-testing surface, see Section 5)
-AP client horizontal scanning (client-to-client)
-SMB / RDP / Telnet access attempts
-ICMP to admin host
-Wazuh indexer access attempt from non-admin
+ICMP anomaly and sweep detection
+SSH brute-force and legacy protocol detection
+AdGuard and admin-path access attempts
+TCP scan and flood patterns
+UDP and TCP RST floods
+DNS bypass detection
+FTP detection test cases
+AP client horizontal scanning
+SMB, RDP, and Telnet access attempts
+Admin-host and Wazuh service access attempts
 ```
 
-### Rule quality notes
-
-- Rules use `detection_filter` thresholds (count/seconds) rather than
-  firing on every single packet, which keeps noisy behaviors like SYN
-  bursts and ICMP sweeps from spamming one alert per packet.
-- Several rules are commented out with `##` rather than deleted — these are
-  earlier iterations kept for reference, not active rules.
-- Legacy port rules (5050/5051) reference dashboard ports from earlier
-  project stages (`netsentry_dashboard.py`, `netsentry_status_api.py`) and
-  remain as detection coverage in case those old services are ever
-  reactivated for testing.
-
-### Rule validation
+### Rule syntax validation
 
 ```bash
 sudo suricata -T \
   -c /etc/suricata/suricata.yaml \
-  -S /etc/suricata/rules/local.rules \
+  -S /home/gbx/netsentry-gateway/suricata/rules/local.rules \
   -i wlx200db0220b9a \
   -l /tmp/suricata-rule-test
 ```
 
+Adjust the absolute rules path when the repository is checked out elsewhere.
+
+### Automated PCAP validation
+
+There are 27 versioned fixtures following this layout:
+
+```text
+tests/cases/<SID>/<SID>.pcap
+```
+
+Run all cases or one selected SID:
+
+```bash
+python3 tests/cases/validate.py
+python3 tests/cases/validate.py 10000001
+```
+
+For each case, the validator runs:
+
+```bash
+sudo suricata \
+  -r tests/cases/<SID>/<SID>.pcap \
+  -S /home/gbx/netsentry-gateway/suricata/rules/local.rules \
+  -c /etc/suricata/suricata.yaml \
+  -k none \
+  -l <fresh-temporary-directory>
+```
+
+It parses `eve.json` as newline-delimited JSON. A case passes only when:
+
+1. `alert.signature_id` contains the numeric SID represented by the directory name at least once.
+2. No alert with a different integer SID appears.
+
+Multiple alerts for the expected SID are allowed. Non-alert EVE events are ignored. The temporary directory is deleted after each case, including failures.
+
+The validator does not compare `eve.json` against a checked-in baseline and does not read the `expected.json` files currently present in case directories.
+
+Exit codes:
+
+| Code | Meaning |
+| ---: | --- |
+| `0` | Every selected case passed |
+| `1` | At least one SID/EVE semantic validation failure and no execution error |
+| `2` | Missing configuration, no matching cases, Suricata failure, or missing EVE output |
+
+An execution error takes precedence over semantic failures in the final exit code.
+
+### Supporting PCAP utilities
+
+Inspect all captures or one selected case with tcpdump:
+
+```bash
+python3 tests/cases/run_pcaps.py
+python3 tests/cases/run_pcaps.py 10000001
+```
+
+This executes `sudo tcpdump -r <pcap>` and returns `0` only when every selected invocation succeeds. It checks capture readability, not Suricata alert correctness.
+
+Generate Suricata output directly inside each case directory:
+
+```bash
+python3 tests/cases/run_suricata.py
+python3 tests/cases/run_suricata.py 10000001
+```
+
+`run_suricata.py` does not parse or validate EVE. It writes output beside the PCAP, and configured append-mode logs may retain output from earlier runs. Use `validate.py` for isolated correctness testing.
+
 ### Why Suricata replaced Snort
 
-Snort was the original IDS engine (through v1.8). Running Snort and
-Suricata side by side (v1.9–v2.1 transition period) produced duplicate
-alerts for the same events and made investigation noisier, not clearer.
-Snort was removed from the active stack in **v2.2**. All Snort rules,
-configs, and the original alert-watcher/dashboard code remain in git
-history and in the historical `docs/*.md` files for reference — they are
-not deleted, just retired.
+Snort was the original IDS. Running Snort and Suricata together produced duplicate alerts and noisier investigations. Snort and the built-in IDS dashboard were retired in v2.2; Wazuh is now the investigation interface.
 
 ---
 
 ## 7. SIEM: Wazuh
 
-Wazuh is the investigation layer. It ingests:
+Wazuh ingests and investigates:
 
 - Suricata `eve.json` alerts
-- iptables firewall drop logs (`NETSENTRY_FW_INPUT_DROP`, `NETSENTRY_FW_FORWARD_DROP`)
-- Nginx access/error logs
+- nftables drop logs, including `NETSENTRY_FW_FORWARD_DROP`
+- Nginx access and error logs
 - Authentication logs
-- System/journald/kernel events
+- System, journald, and kernel events
 
 **Wazuh dashboard:** `https://192.168.1.19:8443/`
 
-Repository reference configs (not the live configs — copies for
-documentation/version tracking):
+Repository reference configurations:
 
 ```text
 config/wazuh/ossec.conf.netsentry-reference
@@ -314,101 +433,72 @@ config/wazuh/local_suricata_sids.xml
 config/wazuh/jvm.options.netsentry-reference
 ```
 
-### Performance tuning applied (v2.3)
+### Performance tuning
 
-Homelab hardware is resource-constrained, so:
+The deployment runs on constrained homelab hardware. Wazuh indexer heap was reduced, vulnerability detection and startup syscheck were disabled, scan frequency was reduced, and unused container services were disabled.
 
-| Setting                       | Action           |
-| ------------------------------- | ------------------ |
-| Wazuh indexer JVM heap             | Reduced to 512m    |
-| Vulnerability detection module      | Disabled            |
-| Syscheck scan-on-start               | Disabled            |
-| Syscheck frequency                    | Reduced             |
-| Swap                                    | Configured as a safety buffer only, not treated as usable RAM |
-| Docker / containerd                      | Disabled when unused |
-
-### Suricata rule tuning for Wazuh (v2.6)
-
-Rules were tuned so each real-world behavior produces **one** meaningful
-alert instead of several near-duplicates — e.g. one AdGuard-access alert
-per attempt instead of one per packet, one SYN-burst alert per burst rather
-than per SYN packet. This directly improves signal quality in Wazuh's
-alert list.
+Suricata thresholds are tuned to produce meaningful behavioral alerts rather than one alert per packet.
 
 ---
 
 ## 8. Web Dashboard
 
-**Backend:** `app/netsentry_app.py` (Flask, ~1100 lines)
+**Backend:** `app/netsentry_app.py`
+
 **Frontend:** `app/templates/`, `app/static/`
-**Reverse proxy:** Nginx (`config/nginx/netsentry.conf`)
 
-### Design principle
+**Reverse proxy:** `config/nginx/netsentry.conf`
 
-The dashboard is explicitly **read-only**. It reports gateway state but
-never modifies firewall rules, restarts services, or triggers packet
-captures. Any privileged action (the planned Actions dashboard, see Section
-16) is scoped as a deliberately separate, more carefully built component —
-not bolted onto the existing read path.
+The dashboard is read-only. It reports gateway state but does not apply firewall rules, restart services, or trigger captures. Privileged client actions remain planned as a separate component.
 
-### Routes
+### Main routes
 
 Public:
 
 ```text
-/            /about        /features     /architecture
-/status      /docs         /hardware      /contact
+/  /about  /features  /architecture  /status  /docs  /hardware  /contact
 ```
 
-Admin (session-authenticated, login at `/admin/login`):
+Authenticated admin:
 
 ```text
-/admin/dashboard   /admin/clients   /admin/dns
-/admin/firewall    /admin/network
+/admin/dashboard  /admin/clients  /admin/dns
+/admin/firewall   /admin/network
 ```
 
-API (used by the dashboard's own JS, not documented as a public API):
+Internal dashboard API:
 
 ```text
-/api/status              /api/clients            /api/dns/stats
-/api/network/interfaces  /api/network/routes      /api/firewall/rules
+/api/status
+/api/clients
+/api/dns/stats
+/api/network/interfaces
+/api/network/routes
+/api/firewall/rules
 ```
 
-**Removed in v2.2** (moved to Wazuh): `/admin/ids`, `/admin/logs`,
-`/api/ids/alerts`, `/api/logs`.
+Removed in v2.2: `/admin/ids`, `/admin/logs`, `/api/ids/alerts`, and `/api/logs`.
 
 ### Authentication
 
-- Password is checked either against a hash (`NETSENTRY_WEB_PASSWORD_HASH`,
-  via `werkzeug.security.check_password_hash`) or, if no hash is set,
-  against a plaintext env value using `hmac.compare_digest` (constant-time
-  comparison, not `==`).
-- CSRF tokens are generated with `secrets.token_urlsafe(32)` and compared
-  with `hmac.compare_digest`.
-- Session cookies are `HttpOnly` and `SameSite=Strict`.
-- Login lockout: configurable max failures and lockout window
-  (`NETSENTRY_LOGIN_MAX_FAILURES`, `NETSENTRY_LOGIN_LOCKOUT`), default 5
-  failures / 30 second lockout.
-- Session timeout: `NETSENTRY_SESSION_TIMEOUT`, default 14400s (4 hours).
-
-### Configuration
-
-All operational values are read from environment variables with sane
-defaults, loaded via `EnvironmentFile=/etc/netsentry/netsentry-web.env` in
-the systemd unit — nothing sensitive is hardcoded in `netsentry_app.py`.
+- Supports a password hash or constant-time plaintext environment comparison
+- Uses CSRF tokens generated with `secrets.token_urlsafe`
+- Uses `HttpOnly` and `SameSite=Strict` session cookies
+- Applies configurable login failure lockout and session timeout
+- Loads sensitive values through `/etc/netsentry/netsentry-web.env`
 
 ---
 
 ## 9. Systemd Services
 
-### Active in v2.6
+### Active service set
 
 ```text
 ssh.service
 nginx.service
 netsentry-web.service
 netsentry-ap-interface.service
-netsentry-firewall.service
+nftables.service
 netsentry-dnsmasq.service
 hostapd.service
 AdGuardHome.service
@@ -420,7 +510,9 @@ wazuh-dashboard.service
 filebeat.service
 ```
 
-### Explicitly disabled
+The retired `netsentry-firewall.service` must not be treated as the active firewall service.
+
+### Explicitly disabled when unused
 
 ```text
 docker.service
@@ -428,103 +520,76 @@ docker.socket
 containerd.service
 ```
 
-(Disabled because they're unused and consume resources on constrained
-hardware — see Section 7 performance tuning.)
-
-### Retired (historical, do not re-enable without review)
+### Retired
 
 ```text
+netsentry-firewall.service
 netsentry-snort-ap.service
 netsentry-snort-watcher.service
 ```
 
-### Boot ordering
-
-`netsentry-ap-interface` → `netsentry-firewall` → `hostapd` / `dnsmasq` /
-`nginx`. The firewall must apply before the AP and web-facing services come
-up, so nothing is briefly exposed with a default-open ruleset.
-
-### Full health check
+### Health check
 
 ```bash
-for s in ssh nginx netsentry-web netsentry-ap-interface hostapd \
-         AdGuardHome tailscaled netsentry-firewall netsentry-dnsmasq \
-         suricata wazuh-indexer wazuh-manager wazuh-dashboard filebeat; do
+for s in ssh nginx netsentry-web netsentry-ap-interface nftables \
+         netsentry-dnsmasq hostapd AdGuardHome tailscaled suricata \
+         wazuh-indexer wazuh-manager wazuh-dashboard filebeat; do
   printf "%-32s enabled=%-12s active=%s\n" \
-  "$s" \
-  "$(systemctl is-enabled "$s" 2>/dev/null || echo not-found)" \
-  "$(systemctl is-active "$s" 2>/dev/null || echo not-found)"
+    "$s" \
+    "$(systemctl is-enabled "$s" 2>/dev/null || echo not-found)" \
+    "$(systemctl is-active "$s" 2>/dev/null || echo not-found)"
 done
 ```
+
+The nftables configuration should load before AP clients depend on forwarding. Because the configuration flushes the complete ruleset, Tailscale must load or be restarted afterward.
 
 ---
 
 ## 10. Remote Administration: Tailscale
 
 ```text
-Interface:  tailscale0
-Purpose:    Remote SSH + remote HTTPS dashboard access, without exposing
-            NetSentry directly to the public Internet.
+Interface: tailscale0
+Purpose:   private SSH and web administration without public exposure
 ```
 
-Explicitly **not** used as: an exit node, a subnet router, or a public VPN
-gateway. Firewall rules only permit the Tailscale interface to reach SSH,
-HTTP, HTTPS, and the Wazuh dashboard port on the NetSentry host itself —
-nothing else, and no forwarding beyond the host.
+The nftables template permits Tailscale-interface TCP access to ports `22`, `80`, and `443`. It does not currently permit port `8443` through that rule and does not forward Tailscale traffic beyond the host.
+
+Tailscale uses the host's iptables-nft compatibility backend and creates `ts-*` chains. These coexist with native `table inet netsentry` but are removed by `flush ruleset`; restart `tailscaled` after firewall application.
 
 ---
 
 ## 11. Secrets and Security Policy
 
-### Never commit
+Never commit real:
 
 ```text
-Wi-Fi passphrases              AdGuard passwords
-Web dashboard passwords         NETSENTRY_WEB_SECRET
-Private TLS keys                .env files
-Runtime alert/log files          Runtime JSON alert files
-PCAP files                       Real credentials
+Wi-Fi passphrases
+AdGuard or dashboard credentials
+NETSENTRY_WEB_SECRET
+Private TLS keys
+.env files
+Operational PCAP captures
+Runtime alert and log files
 ```
 
-### Secrets live outside git, at
+Store runtime secrets outside Git:
 
 ```text
 /etc/netsentry/netsentry-web.env
 /etc/netsentry/certs/
 ```
 
-### Pre-commit check
+The PCAPs under `tests/cases/` are deliberate test fixtures. Sanitize every fixture before committing it because captures may expose traffic contents or addressing information.
+
+`config/vars.yml` and historical scripts contain placeholder-like values. They must be replaced or moved to an external secret source before treating the repository as a production-ready or public deployment bundle.
+
+Pre-commit secret scan:
 
 ```bash
 git diff --cached | grep -Ei 'wpa_passphrase=|NETSENTRY_WEB_PASSWORD=|NETSENTRY_WEB_SECRET=|-----BEGIN .*PRIVATE KEY-----|PUT_YOUR_REAL_PASSWORD|PUT_A_LONG_RANDOM_SECRET' \
-&& echo "STOP: real secret pattern found" \
-|| echo "OK: no real secret patterns found"
+  && echo "STOP: real secret pattern found" \
+  || echo "OK: no real secret patterns found"
 ```
-
-### .gitignore categories
-
-```text
-snort/alerts/*      snort/pcaps/*
-data/ids/*.json      data/ids/*.jsonl
-data/ids/rev3_flags/* *.pcap
-*.bak*                *.key
-*.crt
-```
-
-### Known placeholder secrets (not real, but should be cleaned up)
-
-`scripts/netsentry_portal.py` (historical, superseded by `app/netsentry_app.py`)
-contains hardcoded placeholder values:
-
-```python
-ADMIN_PASSWORD = "PASSWORDHERE"
-PORTAL_SECRET = "change_this_secret_later_please"
-```
-
-These were never real credentials, but they read as real ones out of
-context. Recommended fix: replace with `os.getenv(...)` calls matching the
-pattern already used in `netsentry_app.py`, or delete the file if it's
-fully superseded.
 
 ---
 
@@ -532,213 +597,196 @@ fully superseded.
 
 ```text
 app/
-  netsentry_app.py              Active Flask dashboard backend
-  static/                       CSS/JS for the dashboard
-  templates/                    Public + admin page templates
+  netsentry_app.py                   Active Flask dashboard backend
+  static/                            Dashboard CSS and JavaScript
+  templates/                         Public and admin templates
 
 config/
-  nginx/netsentry.conf           Active Nginx site config
-  suricata/suricata.yaml         Repository copy of active Suricata config
-  wazuh/                          Reference copies of Wazuh configs
-  systemd/                        Repository copies of active systemd units
-  ap/                              dnsmasq/hostapd config examples
+  vars.yml                           Shared deployment variables
+  nginx/netsentry.conf               Nginx reference configuration
+  suricata/suriata.yml               Tracked Suricata configuration copy
+  systemd/                           Systemd unit copies
+  wazuh/                             Wazuh reference configurations
+
+templates/
+  firewall.nft.j2                    Native nftables Jinja template
+
+playbooks/
+  firewall.yml                       nftables and IPv4-forwarding deployment
 
 docs/
-  NETSENTRY_MASTER_DOCUMENTATION.md   This file
-  releases/                            Dated release notes (v1.9 -> v2.6)
-  *.md                                  Historical build-log docs
-
-Pics/                             Screenshots, diagrams, logo
+  NETSENTRY_MASTER_DOCUMENTATION.md  This document
+  nftables-ansible.md                Manual template pipeline notes
+  nftables_service.md                Playbook and service notes
+  releases/                          Dated release notes
 
 scripts/
-  apply_firewall.sh              Active firewall/NAT script
-  performance_check.sh            Active resource-usage check
-  netsentry_dashboard.py          Historical, superseded
-  netsentry_portal.py             Historical, superseded
-  netsentry_status_api.py         Historical, superseded
-  honeypot_lite.py                Historical decoy login service
-  http_test_service.py            Historical test HTTP service
-  start_python_services.py        Historical service launcher
-  stop_python_services.py         Historical service stopper
+  apply_firewall.sh                  Retired iptables implementation
+  performance_check.sh               Resource usage check
+  netsentry_dashboard.py             Historical dashboard
+  netsentry_portal.py                Historical portal
+  netsentry_status_api.py            Historical status API
 
-suricata/rules/local.rules       Active AP-side Suricata rules
+suricata/rules/local.rules            Active local IDS rules
 
-tests/                           Manual validation test notes (iptables,
-                                  tcpdump, AdGuard DNS filtering)
-
-NetSentry-Gateway-Architecture.pdf
+tests/cases/
+  validate.py                         Isolated SID-based Suricata validator
+  run_pcaps.py                        tcpdump capture inspection helper
+  run_suricata.py                     Manual case-output generator
+  <SID>/<SID>.pcap                    Versioned rule test fixtures
 ```
 
 ---
 
 ## 13. Version History
 
-| Version | Milestone                                                          |
-| ------- | -------------------------------------------------------------------- |
-| V0      | Early lab-over-Wi-Fi-SSH stage, no gateway function yet                |
-| v1.5    | Early gateway/AP/DHCP foundation                                        |
-| v1.6    | Web dashboard foundation                                                 |
-| v1.8    | Stable homelab release: AP + DHCP + DNS filtering + firewall/NAT + HTTPS dashboard + **Snort** IDS + alert watcher |
-| v1.9    | Suricata introduced alongside Snort                                      |
-| v2.1    | Wazuh mini-SIEM integration added                                         |
-| v2.2    | **Snort removed** — duplicate alerts with Suricata. Built-in IDS dashboard (`/admin/ids`, `/api/ids/alerts`) removed from Flask app; investigation moved fully to Wazuh |
-| v2.3    | System performance tuning for Wazuh + Suricata on constrained hardware       |
-| v2.6    | **Current stable release** — Suricata + Wazuh rule tuning, firewall log correlation, validated after reboot |
+| Version | Milestone |
+| --- | --- |
+| V0 | Early Wi-Fi/SSH lab stage |
+| v1.5 | Gateway, AP, and DHCP foundation |
+| v1.6 | Web dashboard foundation |
+| v1.8 | Stable AP, DHCP, DNS, firewall/NAT, dashboard, and Snort release |
+| v1.9 | Suricata introduced alongside Snort |
+| v2.1 | Wazuh mini-SIEM integration |
+| v2.2 | Snort and the duplicate built-in IDS dashboard retired |
+| v2.3 | Wazuh and Suricata performance tuning |
+| v2.6 | Suricata/Wazuh tuning, native nftables migration, Ansible firewall deployment, PCAP rule validation, and reboot persistence verification |
 
 ---
 
 ## 14. Testing and Validation
 
-### Manual client-side tests (PowerShell)
-
-```text
-ping, large ping, TCP connection attempts, DNS queries, port probes
-```
-
-### Stronger tests (Ubuntu VM)
-
-```text
-nmap scans, hping3 SYN tests, NULL/FIN/XMAS scans, DNS bypass testing,
-crafted traffic
-```
-
-### Confirmed working
-
-```text
-AP-side Suricata live capture and rule matching
-Suricata -> eve.json -> Filebeat -> Wazuh pipeline
-Firewall log correlation in Wazuh (NETSENTRY_FW_* prefixes)
-AdGuard DNS API integration in the dashboard
-iptables firewall dashboard visibility
-Tailscale interface visibility and remote SSH/HTTPS access
-Reboot persistence for all active services
-```
-
-### v2.6 validation checklist
+### Automated Suricata cases
 
 ```bash
-# 1. Service status
-for s in ssh nginx netsentry-web netsentry-ap-interface hostapd \
-         AdGuardHome tailscaled netsentry-firewall netsentry-dnsmasq \
-         suricata wazuh-indexer wazuh-manager wazuh-dashboard filebeat; do
+python3 tests/cases/validate.py
+python3 tests/cases/validate.py 10000001
+```
+
+Expected result: each selected directory SID is the only Suricata alert SID generated. See Section 6 for prerequisites, semantics, and exit codes.
+
+### PCAP readability
+
+```bash
+python3 tests/cases/run_pcaps.py
+python3 tests/cases/run_pcaps.py 10000001
+```
+
+### Firewall deployment and syntax
+
+```bash
+ansible-playbook playbooks/firewall.yml --check --diff --ask-become-pass
+ansible-playbook playbooks/firewall.yml --ask-become-pass
+sudo systemctl restart tailscaled
+```
+
+### Full operational checklist
+
+```bash
+# 1. Firewall service and rules
+sudo systemctl is-enabled nftables
+sudo systemctl status nftables --no-pager
+sudo nft list table inet netsentry
+sudo sysctl net.ipv4.ip_forward
+
+# 2. Confirm no retired NetSentry iptables rules returned
+sudo iptables-save
+sudo ip6tables-save
+
+# 3. Service status
+for s in ssh nginx netsentry-web netsentry-ap-interface nftables \
+         netsentry-dnsmasq hostapd AdGuardHome tailscaled suricata \
+         wazuh-indexer wazuh-manager wazuh-dashboard filebeat; do
   printf "%-32s enabled=%-12s active=%s\n" \
-  "$s" \
-  "$(systemctl is-enabled "$s" 2>/dev/null || echo not-found)" \
-  "$(systemctl is-active "$s" 2>/dev/null || echo not-found)"
+    "$s" \
+    "$(systemctl is-enabled "$s" 2>/dev/null || echo not-found)" \
+    "$(systemctl is-active "$s" 2>/dev/null || echo not-found)"
 done
 
-# 2. Performance
-./scripts/performance_check.sh
-
-# 3. Suricata rule validation
+# 4. Suricata syntax and PCAP tests
 sudo suricata -T -c /etc/suricata/suricata.yaml \
-  -S /etc/suricata/rules/local.rules -i wlx200db0220b9a \
-  -l /tmp/suricata-rule-test
+  -S /home/gbx/netsentry-gateway/suricata/rules/local.rules \
+  -i wlx200db0220b9a -l /tmp/suricata-rule-test
+python3 tests/cases/validate.py
 
-# 4. Wazuh manager check
+# 5. Firewall logs
+journalctl -k -n 100 --no-pager | grep -E 'nftables input drop|NETSENTRY_FW_FORWARD_DROP'
+
+# 6. Wazuh services
 sudo systemctl is-active wazuh-manager wazuh-indexer wazuh-dashboard filebeat
 
-# 5. Firewall log check
-journalctl -k -n 50 --no-pager | grep NETSENTRY_FW
-
-# 6. Wazuh firewall alert check
-sudo grep -i "NetSentry firewall" /var/ossec/logs/alerts/alerts.json | tail -5
-
-# 7. Snort removal verification
+# 7. Snort retirement
 systemctl list-units --type=service | grep -i snort || echo "OK: no Snort services"
 
-# 8. Dashboard accessibility
-#    NetSentry: https://192.168.1.19/       -> gateway status page loads
-#    Wazuh:     https://192.168.1.19:8443/  -> SIEM dashboard loads
-
-# 9. Disabled services
-for s in docker.service docker.socket containerd.service; do
-  printf "%-24s %s\n" "$s" "$(systemctl is-enabled "$s" 2>/dev/null || echo not-found)"
-done
+# 8. Dashboard access
+# NetSentry: https://192.168.1.19/
+# Wazuh:     https://192.168.1.19:8443/
 ```
+
+### Network behavior to verify
+
+- AP client obtains a DHCP lease and uses the gateway DNS service.
+- DNS filtering works.
+- AP-to-internet forwarding and masquerading work.
+- Established return traffic reaches AP clients.
+- Home-to-AP and AP-to-home behavior matches the intended trust boundary.
+- Admin and Tailscale management ports match the nftables template.
+- Suricata alerts reach EVE and Wazuh.
+- nftables, forwarding, AP connectivity, and Tailscale survive or recover after reboot.
 
 ---
 
 ## 15. Known Issues
 
-1. **Admin IP mismatch in `apply_firewall.sh`.** The script hardcodes
-   `ADMIN_IP="192.168.1.10"`. Every other reference in the codebase — the
-   Flask app, Nginx config, Suricata rules, and all documentation — uses
-   `192.168.1.11`. This has already been the subject of two separate
-   "adjusting admin ip" fixes in git history, meaning the drift keeps
-   recurring rather than being permanently fixed. **Correct value:
-   `192.168.1.11`.** Update the firewall script and re-run the validation
-   checklist.
-2. **Placeholder secrets in a superseded file.** `scripts/netsentry_portal.py`
-   still contains `ADMIN_PASSWORD = "PASSWORDHERE"` and a placeholder
-   `PORTAL_SECRET`. Not real credentials, but should be removed/parameterized
-   before the repo is treated as fully public-facing (see Section 11).
-3. **Three historical dashboard implementations remain in `scripts/`**
-   (`netsentry_dashboard.py`, `netsentry_portal.py`, `netsentry_status_api.py`)
-   alongside the current `app/netsentry_app.py`. They're clearly marked as
-   historical in this document and the README, but anyone skimming the repo
-   without reading docs first could reasonably mistake one of them for the
-   active service.
+1. **The nftables template flushes the complete ruleset.** Applying it removes tables owned by Tailscale, containers, and other firewall managers. The playbook does not restart those services; restart `tailscaled` after application and review other rule owners before deployment.
+2. **AP clients can initiate connections to the full home subnet.** This is broader than an isolated guest/AP policy and should be restricted if not intentional.
+3. **Administrative values have drifted across historical files.** The nftables deployment uses `config/vars.yml`, currently with admin IP `192.168.1.50`. Verify Nginx, Suricata, Flask, and system service configurations separately before assuming agreement.
+4. **Suricata test paths are deployment-specific.** `validate.py` and `run_suricata.py` hardcode `/home/gbx/netsentry-gateway/suricata/rules/local.rules` and `/etc/suricata/suricata.yaml`.
+5. **The tracked Suricata config filename is inconsistent.** The repository contains `config/suricata/suriata.yml`, while older documentation refers to `config/suricata/suricata.yaml`.
+6. **`run_suricata.py` writes into fixture directories.** Append-mode logs can include earlier output; use `validate.py` for clean, temporary execution.
+7. **Placeholder-like credentials remain in tracked examples and historical scripts.** They should be externalized or removed before public or production use.
+8. **Historical implementations remain in the repository.** Retired firewall and dashboard files can be mistaken for active components without reading this document.
 
 ---
 
 ## 16. Unfinished / Planned Work
 
-### Actions dashboard (planned)
+### Actions dashboard
 
-Route: `/admin/actions`
+Planned actions: **Watch**, **Restrict**, **Ban**, and **Unblock**.
 
-Planned client actions: **Watch**, **Restrict**, **Ban**, **Unblock**
-
-Safe implementation order:
+Safe delivery order:
 
 ```text
-1. UI only (no backend effect)
-2. Persist state to a file, still no enforcement
-3. Watch mode (logging only)
+1. UI only
+2. Persist state without enforcement
+3. Watch/logging mode
 4. Restrict mode
 5. Ban mode
 6. Unblock mode
-7. Firewall enforcement helper (the only step that touches iptables)
+7. A narrowly scoped nftables enforcement helper
 ```
 
-Persistent state file: `/var/lib/netsentry/client_actions.json`
+Any enforcement component must protect gateway, loopback, admin, and complete subnet addresses from accidental broad blocking. It must use native nftables rather than restoring the retired iptables path.
 
-**Hard safety constraints for this feature:**
+### Firewall hardening
 
-Never allow automatic blocking of:
+- Decide whether AP-to-home initiation is intentional; otherwise restrict it to explicit destinations and ports.
+- Replace global `flush ruleset` with ownership-scoped table replacement or explicitly coordinate all services whose tables are removed.
+- Bind source-address trust to expected ingress interfaces where appropriate.
+- Add a deployment rollback or out-of-band recovery procedure for remote administration lockout.
+- Consider enforcing gateway-only DNS rather than only detecting external DNS use.
 
-```text
-192.168.1.11 (admin)   10.10.10.1 (AP gateway)
-192.168.1.19 (home IP)  127.0.0.1 (loopback)
-```
+### Test portability
 
-Never allow subnet-level blocking:
-
-```text
-10.10.10.0/24
-192.168.1.0/24
-```
+- Make Suricata rules and config paths command-line options or derive them from the repository and deployment configuration.
+- Decide whether empty `expected.json` fixtures should be removed or incorporated into validation.
+- Prevent manual output generation from contaminating tracked fixture directories.
 
 ### Other planned items
 
-```text
-Nginx/Flask HTTPS attack watcher (path/user-agent-level detection,
-  since Suricata cannot see inside HTTPS)
-Home-side Suricata sensor on enp3s0 (currently only AP-side coverage exists)
-Final architecture diagram polish
-```
+- Nginx/Flask HTTPS attack watcher for request-path and authentication visibility
+- Review whether a second Suricata capture interface is required and document the deployed configuration
+- Final architecture diagram update
 
-### HTTPS visibility limitation (context for the above)
-
-Suricata sees client IP, server IP, TCP port, TLS/HTTPS connection,
-scan/flood/DNS-bypass behavior. It **cannot** see inside HTTPS: request
-paths (`/admin/login`), headers, POST bodies, user-agents, or
-username/password fields. That's why responsibility is split:
-
-```text
-Suricata     = network-level IDS
-Nginx logs   = HTTPS request/path-level detection (planned)
-Flask logs   = admin/auth-level detection (already partially covered by
-               login lockout, see Section 8)
-```
+Suricata provides network and TLS metadata but cannot inspect encrypted HTTP paths, headers, POST bodies, or credentials. Nginx and Flask logs remain the appropriate sources for HTTPS request and authentication monitoring.
