@@ -37,26 +37,29 @@ def find_case_dirs() -> list[Path]:
     return cases
 
 
-def run_suricata_temp(pcap_path: Path) -> tuple[int, Path]:
+def run_suricata_temp(pcap_path: Path) -> tuple[int, Path, str]:
     """
     Run Suricata in a temporary directory on the given pcap.
 
-    Returns (exit_code, temp_dir_path).
+    Returns (exit_code, temp_dir_path, error_message).
+    error_message is "" on success, or a diagnostic string on failure.
     """
     tmpdir = Path(tempfile.mkdtemp(prefix=f"suricata_{pcap_path.parent.name}_"))
-    result = subprocess.run(
-        [
-            "sudo", "suricata",
-            "-r", str(pcap_path),
-            "-S", SURICATA_RULES,
-            "-c", SURICATA_CONFIG,
-            "-k", "none",
-            "-l", str(tmpdir),
-        ],
-        capture_output=True,
-        text=True,
-    )
-    return result.returncode, tmpdir
+    cmd = [
+        "sudo", "suricata",
+        "-r", str(pcap_path),
+        "-S", SURICATA_RULES,
+        "-c", SURICATA_CONFIG,
+        "-k", "none",
+        "-l", str(tmpdir),
+    ]
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True)
+    except FileNotFoundError as e:
+        shutil.rmtree(tmpdir, ignore_errors=True)
+        return -1, tmpdir, f"Command not found: {e}"
+
+    return result.returncode, tmpdir, ""
 
 
 def load_eve_json(path: Path) -> list | None:
@@ -131,10 +134,11 @@ def main():
         print(f"  pcap: {pcap}")
 
         # --- run Suricata in temp dir ---
-        exit_code, tmpdir = run_suricata_temp(pcap)
+        exit_code, tmpdir, err_msg = run_suricata_temp(pcap)
 
         if exit_code != 0:
-            print(f"[{case_id}] ERROR: Suricata exited with code {exit_code}", file=sys.stderr)
+            detail = err_msg if err_msg else f"exit code {exit_code}"
+            print(f"[{case_id}] ERROR: Suricata failed: {detail}", file=sys.stderr)
             shutil.rmtree(tmpdir, ignore_errors=True)
             exec_errors += 1
             continue
