@@ -6,7 +6,7 @@
 
 <p align="center">
   <b>Debian-based homelab security gateway</b><br>
-  AP + DHCP + DNS filtering + nftables firewall/NAT + HTTPS dashboard + Suricata IDS + Wazuh SIEM
+  AP + DHCP + DNS filtering + native nftables firewall/NAT + Suricata IDS + Wazuh SIEM + read-only operations dashboard
 </p>
 
 <p align="center">
@@ -17,13 +17,13 @@
 
 ## Overview
 
-NetSentry turns a Debian machine into a security gateway between a home network and a Wi-Fi client subnet. It combines routing, DHCP, DNS filtering, native nftables firewall/NAT, network intrusion detection with Suricata, Wazuh SIEM, and a read-only operations dashboard.
+NetSentry turns a Debian host into a security gateway between a home network and a Wi-Fi client subnet. It combines routing, DHCP, DNS filtering, native nftables firewall/NAT, network intrusion detection with Suricata, Wazuh SIEM, a read-only operations dashboard, and private remote administration through Tailscale.
 
 > **Authoritative reference:** [`docs/NETSENTRY_MASTER_DOCUMENTATION.md`](docs/NETSENTRY_MASTER_DOCUMENTATION.md)
 
 ---
 
-## Key Features
+## Key Capabilities
 
 - **Wi-Fi Access Point** (`hostapd`) on `10.10.10.0/24`
 - **DHCP Server** (`dnsmasq`) for AP clients
@@ -39,7 +39,7 @@ NetSentry turns a Debian machine into a security gateway between a home network 
 
 ## Getting Started
 
-> Adjust the interface names, networks, addresses, and SSID in `config/vars.yml` for the target gateway before deployment. The checked-in values are deployment-specific examples, not universal defaults.
+> Adjust interface names, networks, addresses, and SSID in `config/vars.yml` for the target gateway before deployment. The checked-in values are deployment-specific examples, not universal defaults.
 
 ### Prerequisites
 

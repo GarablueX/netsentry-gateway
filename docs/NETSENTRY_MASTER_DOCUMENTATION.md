@@ -739,12 +739,19 @@ systemctl list-units --type=service | grep -i snort || echo "OK: no Snort servic
 ## 15. Known Issues
 
 1. **The nftables template flushes the complete ruleset.** Applying it removes tables owned by Tailscale, containers, and other firewall managers. The playbook does not restart those services; restart `tailscaled` after application and review other rule owners before deployment.
+
 2. **AP clients can initiate connections to the full home subnet.** This is broader than an isolated guest/AP policy and should be restricted if not intentional.
+
 3. **Administrative values have drifted across historical files.** The nftables deployment uses `config/vars.yml`, currently with admin IP `192.168.1.50`. Verify Nginx, Suricata, Flask, and system service configurations separately before assuming agreement.
+
 4. **Suricata test paths are deployment-specific.** `validate.py` and `run_suricata.py` hardcode `/home/gbx/netsentry-gateway/suricata/rules/local.rules` and `/etc/suricata/suricata.yaml`.
+
 5. **The tracked Suricata config filename is inconsistent.** The repository contains `config/suricata/suriata.yml`, while older documentation refers to `config/suricata/suricata.yaml`.
+
 6. **`run_suricata.py` writes into fixture directories.** Append-mode logs can include earlier output; use `validate.py` for clean, temporary execution.
+
 7. **Placeholder-like credentials remain in tracked examples and historical scripts.** They should be externalized or removed before public or production use.
+
 8. **Historical implementations remain in the repository.** Retired firewall and dashboard files can be mistaken for active components without reading this document.
 
 ---
