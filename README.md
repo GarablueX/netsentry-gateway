@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <b>Current version: v2.6.0 — Stable</b>
+  <b>Current version: v3.1.0 — Stable</b>
 </p>
 
 ---
@@ -228,4 +228,4 @@ NetSentry builds on Debian, hostapd, dnsmasq, AdGuard Home, nftables, Nginx, Fla
 
 ---
 
-> NetSentry v2.6.0 demonstrates Linux networking, AP mode, DHCP, DNS filtering, native nftables firewalling, IDS/SIEM integration, service automation, private remote administration, and operational visibility in a continuously running homelab. It is a learning platform rather than an enterprise-ready product.
+> NetSentry v3.1.0 demonstrates Linux networking, AP mode, DHCP, DNS filtering, native nftables firewalling, IDS/SIEM integration, service automation, private remote administration, and operational visibility in a continuously running homelab. It is a learning platform rather than an enterprise-ready product.

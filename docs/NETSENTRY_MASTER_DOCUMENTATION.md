@@ -1,6 +1,6 @@
 # NetSentry Gateway — Master Documentation
 
-**Version:** v2.6.0 — Stable
+**Version:** v3.1.0 — Stable
 
 **Status:** Active homelab deployment
 
@@ -650,7 +650,8 @@ tests/cases/
 | v2.1 | Wazuh mini-SIEM integration |
 | v2.2 | Snort and the duplicate built-in IDS dashboard retired |
 | v2.3 | Wazuh and Suricata performance tuning |
-| v2.6 | Suricata/Wazuh tuning, native nftables migration, Ansible firewall deployment, PCAP rule validation, and reboot persistence verification |
+| v2.6 | Stable Suricata/Wazuh gateway architecture and performance tuning |
+| v3.1 | Native nftables migration, Ansible firewall deployment, isolated Suricata PCAP validation, and current architecture documentation |
 
 ---
 
