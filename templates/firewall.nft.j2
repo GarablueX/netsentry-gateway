@@ -68,6 +68,7 @@ table inet netsentry {
 
         # allow admin access 
         ip saddr @admin_ip tcp dport @allowed_admin_ports accept
+        
         #allow admin to ping 
         ip protocol icmp ip saddr @admin_ip accept 
 
@@ -88,8 +89,7 @@ table inet netsentry {
         iifname "{{ network.ap_interface }}" udp sport 68 udp dport 67 accept
 
         # web frontend 
-
-
+        ip saddr @home_lan tcp dport @web_ports accept
         ip saddr @ap_lan tcp dport @web_ports accept
 
         # log drops 
