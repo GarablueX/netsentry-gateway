@@ -67,13 +67,12 @@ table inet netsentry {
         iifname "lo" accept
 
         #ICMP from lans 
+        # allow admin access 
+        ip saddr @admin_ip ip dport @allowed_admin_ports accept
 
-        ip protocol icmp ip saddr @home_lan accept
         ip protocol icmp ip saddr @ap_lan accept
 
-        # allow admin access 
-        ip saddr @admin_ip tcp dport @allowed_admin_ports accept
-
+      
         #tailscale admin access 
         iifname "{{ network.tailscale_interface }}" ip saddr @tailscale_net tcp dport {
             {{ firewall.ssh_port }},
@@ -85,9 +84,6 @@ table inet netsentry {
         ip saddr @ap_lan tcp dport 53 accept
         
         iifname "{{ network.ap_interface }}" udp sport 68 udp dport 67 accept
-
-        # allow home lan to access netsentry to access nothing ( test ) 
-        ip saddr @home_lan ip daddr @ap_lan drop 
 
         # web frontend 
         ip saddr @home_lan tcp dport @web_ports accept
@@ -101,11 +97,6 @@ table inet netsentry {
 
     chain forward {
      type filter hook forward priority 0; policy drop;
-
-    #accept all trafic from the admin to the ap_lan
-    iifname "{{ network.wan_interface }}" oifname "{{ network.ap_interface }}" \
-        ip saddr @admin_ip ip daddr @ap_lan accept
-
      #inter vlan, home to lan 
      iifname "{{ network.wan_interface }}" oifname "{{ network.ap_interface }}" \
         ip saddr @home_lan ip daddr @ap_lan accept
