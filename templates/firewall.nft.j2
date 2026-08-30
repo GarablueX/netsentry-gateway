@@ -88,7 +88,8 @@ table inet netsentry {
         iifname "{{ network.ap_interface }}" udp sport 68 udp dport 67 accept
 
         # web frontend 
-        ip saddr @home_lan tcp dport @web_ports accept
+
+
         ip saddr @ap_lan tcp dport @web_ports accept
 
         # log drops 
