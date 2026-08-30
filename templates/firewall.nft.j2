@@ -66,13 +66,15 @@ table inet netsentry {
         ct state invalid drop
         iifname "lo" accept
 
-        #ICMP from lans 
         # allow admin access 
-        ip saddr @admin_ip ip dport @allowed_admin_ports accept
+        ip saddr @admin_ip tcp dport @allowed_admin_ports accept
+        #allow admin to ping 
+        ip protocol icmp ip saddr @admin_ip accept 
 
+        #ICMP from lans 
         ip protocol icmp ip saddr @ap_lan accept
 
-      
+
         #tailscale admin access 
         iifname "{{ network.tailscale_interface }}" ip saddr @tailscale_net tcp dport {
             {{ firewall.ssh_port }},
