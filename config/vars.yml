@@ -61,6 +61,11 @@ firewall:
   wazuh_manager_port: "8443"
   http_port: "80"
   https_port: "443"
+  dns_port: "53"
+  dhcp_ports:
+  - "67"
+  - "68"
+
 
 web:
   admin_user: "GarablueX"

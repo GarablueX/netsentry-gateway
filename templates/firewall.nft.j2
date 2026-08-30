@@ -90,7 +90,12 @@ table inet netsentry {
 
         ip saddr @home_lan tcp dport @web_ports accept
         ip saddr @ap_lan tcp dport @web_ports accept
-        
+
+        # allow home lan to access netsentry to access nothing ( test ) 
+        ip saddr @home_lan ip daddr @ap_lan drop 
+
+
+
         # log drops 
         limit rate 6/minute burst 10 packets log prefix "nftables input drop: " level info
 
@@ -100,6 +105,10 @@ table inet netsentry {
     chain forward {
      type filter hook forward priority 0; policy drop;
 
+    #accept all trafic from the admin to the ap_lan
+    iifname "{{ network.wan_interface }}" oifname "{{ network.ap_interface }}" \
+        ip saddr @admin_ip ip daddr @ap_lan accept
+
      #inter vlan, home to lan 
      iifname "{{ network.wan_interface }}" oifname "{{ network.ap_interface }}" \
         ip saddr @home_lan ip daddr @ap_lan accept
@@ -107,6 +116,7 @@ table inet netsentry {
      #inter vlan, lan to home 
      iifname "{{ network.ap_interface }}" oifname "{{ network.wan_interface }}" \
         ip saddr @ap_lan ip daddr @home_lan accept       
+
 
     #ap lan to internet 
      iifname "{{ network.ap_interface }}" oifname "{{ network.wan_interface }}" \
