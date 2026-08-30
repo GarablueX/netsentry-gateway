@@ -86,15 +86,12 @@ table inet netsentry {
         
         iifname "{{ network.ap_interface }}" udp sport 68 udp dport 67 accept
 
-        # web frontend 
-
-        ip saddr @home_lan tcp dport @web_ports accept
-        ip saddr @ap_lan tcp dport @web_ports accept
-
         # allow home lan to access netsentry to access nothing ( test ) 
         ip saddr @home_lan ip daddr @ap_lan drop 
 
-
+        # web frontend 
+        ip saddr @home_lan tcp dport @web_ports accept
+        ip saddr @ap_lan tcp dport @web_ports accept
 
         # log drops 
         limit rate 6/minute burst 10 packets log prefix "nftables input drop: " level info
