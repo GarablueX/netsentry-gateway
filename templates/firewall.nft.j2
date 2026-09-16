@@ -80,7 +80,7 @@ table inet netsentry {
         iifname "{{ network.tailscale_interface }}" ip saddr @tailscale_net tcp dport {
             {{ firewall.ssh_port }},
             {{ firewall.http_port }},
-            {{ firewall.https_port }}
+            {{ firewall.https_port }},
             {{ firewall.adguard_ui_port }},
             {{ firewall.wazuh_manager_port }}
         } accept
