@@ -81,6 +81,8 @@ table inet netsentry {
             {{ firewall.ssh_port }},
             {{ firewall.http_port }},
             {{ firewall.https_port }}
+            {{ firewall.adguard_ui_port }},
+            {{ firewall.wazuh_manager_port }}
         } accept
 
         ip saddr @ap_lan udp dport 53 accept
