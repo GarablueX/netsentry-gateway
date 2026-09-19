@@ -19,6 +19,4 @@
 </table></div>
 
 <div class="card"><h3>Dynamic Hardware Probe</h3><p class="muted">When <code>inxi</code> is installed, NetSentry reads live hardware data. Otherwise this page still shows the static known setup.</p><details><summary>Show raw inxi output</summary><pre>{{ hardware.dynamic_inxi.stdout or hardware.dynamic_inxi.stderr }}</pre></details></div>
-
-<div class="card"><h3>Security Note</h3><p>AP security must remain WPA2/WPA3 with a strong passphrase. Public internet exposure is not recommended until HTTPS, login hardening, rate limits, and audit logging are complete.</p></div>
 {% endblock %}

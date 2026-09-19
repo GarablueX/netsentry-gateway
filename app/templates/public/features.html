@@ -5,7 +5,9 @@
   <div class="card"><h3>DHCP</h3><p>dnsmasq assigns client IPs and gateway/DNS options.</p></div>
   <div class="card"><h3>DNS Filtering</h3><p>AdGuard Home filters DNS requests and provides statistics.</p></div>
   <div class="card"><h3>Firewall</h3><p>iptables enforces allowed services, admin-only ports, NAT, and forwarding.</p></div>
-  <div class="card"><h3>IDS</h3><p>Snort writes alerts that are parsed into JSONL and displayed in the dashboard.</p></div>
-  <div class="card"><h3>Logs</h3><p>Snort, application, and system logs are centralized.</p></div>
+  <div class="card"><h3>IDS / IPS</h3><p>Suricata and Snort provide intrusion detection and prevention; alerts are parsed into JSONL and displayed in the dashboard.</p></div>
+  <div class="card"><h3>Threat Detection</h3><p>Wazuh runs endpoint security monitoring and agent integrity checks alongside the gateway.</p></div>
+  <div class="card"><h3>Playbooks</h3><p>Ansible playbooks automate firewall, IDS, and gateway configuration for reproducible deployments.</p></div>
+  <div class="card"><h3>Logs</h3><p>Suricata, Snort, Wazuh, application, and system logs are centralized.</p></div>
 </div>
 {% endblock %}

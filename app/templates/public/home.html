@@ -25,8 +25,7 @@
 <div class="grid">
   <div class="card"><h3>Controlled Access</h3><p>AP clients live on a dedicated <code>10.10.10.0/24</code> network and pass through NetSentry for routing, DNS, and firewall policy.</p></div>
   <div class="card"><h3>Security Visibility</h3><p>The admin dashboard collects Snort alerts, AdGuard DNS statistics, firewall state, DHCP clients, logs, and interface status.</p></div>
-  <div class="card"><h3>Safe V1 Design</h3><p>The current web interface is read-only for gateway control. Active response is reserved for a future privileged agent with audit logging.</p></div>
 </div>
 
-<div class="card"><h3>Explore More</h3><p>The public pages explain the project without exposing private data. The admin dashboard is protected and used for operational monitoring.</p><div class="button-row"><a class="button" href="{{ github_url }}">GitHub repository</a><a class="button secondary" href="/contact">Contact</a></div></div>
+<div class="card"><h3>Explore More</h3><p>The public pages explain the project. The admin dashboard provides operational monitoring of alerts, DNS, clients, and network state.</p><div class="button-row"><a class="button" href="{{ github_url }}">GitHub repository</a><a class="button secondary" href="/contact">Contact</a></div></div>
 {% endblock %}

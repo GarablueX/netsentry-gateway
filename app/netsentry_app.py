@@ -1,14 +1,12 @@
 #!/usr/bin/env python3
 """
 NetSentry Unified Web App
-V1 full read-only monitoring interface.
 
 Architecture:
 Browser -> Nginx :80/:443 -> Flask 127.0.0.1:5000
 
-This app is intentionally read-only. It does not modify firewall rules,
-restart services, or start packet captures. Those actions belong in a later
-privileged agent.
+The web interface provides read-only monitoring. Gateway control is handled
+by Ansible playbooks and the privileged agent with audit logging.
 """
 
 import base64
@@ -842,8 +840,16 @@ def public_docs():
     docs = []
     selected = request.args.get("file", "").strip()
     selected_content = ""
+    allowed_docs = {"README.md", "NETSENTRY_MASTER_DOCUMENTATION.md"}
+    readme_path = BASE_DIR / "README.md"
+    if readme_path.exists():
+        docs.append({"name": "README.md", "size": readme_path.stat().st_size})
+        if selected == "README.md":
+            selected_content = readme_path.read_text(errors="ignore")[:50000]
     if docs_dir.exists():
         for doc in sorted(docs_dir.glob("*.md")):
+            if doc.name not in allowed_docs:
+                continue
             docs.append({"name": doc.name, "size": doc.stat().st_size})
             if selected and selected == doc.name:
                 selected_content = doc.read_text(errors="ignore")[:50000]
